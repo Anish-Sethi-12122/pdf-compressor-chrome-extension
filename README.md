@@ -1,6 +1,6 @@
 # [BRAND NAME] PDF Compressor
 
-A compact Chrome extension for private, client-side PDF processing. Currently supports local PDF selection, drag-and-drop, and PDF inspection (page count, parse validity). No compression is implemented yet; no files leave the device.
+A compact Chrome extension for private, client-side PDF processing. Supports local PDF selection, drag-and-drop, and structural lossless PDF compression using a Web Worker. No files leave the device.
 
 ## Requirements
 
@@ -33,33 +33,23 @@ The Chrome-ready build is created in `dist/`.
 5. Choose this project's `dist` directory.
 6. Pin **PDF Compressor** from the extensions menu, then click its toolbar icon to open the popup.
 
-No permissions, host permissions, content scripts, or background service worker are used. When several files are dropped, the popup accepts the first valid PDF only.
+The extension requires `wasm-unsafe-eval` CSP for execution but requests **0 permissions**.
 
 ---
 
-## PDF Processing
+## PDF Processing Architecture
 
-### Selected library
+### Selected libraries
 
-**pdf-lib 1.17.1** — MIT License
-
-Source: <https://github.com/Hopding/pdf-lib>
+**@jspawn/qpdf-wasm 0.0.2** - Apache-2.0 License
+**pdf-lib 1.17.1** - MIT License
 
 ### Role in this project
 
-pdf-lib is used **exclusively for PDF inspection**. When a user selects a file, the extension reads it locally as an `ArrayBuffer` and passes it to `pdf-lib`'s parser to determine:
+- **qpdf-wasm**: Used exclusively for **lossless structural optimization**. It runs in a dedicated Web Worker to linearize, generate object streams, and recompress Flate streams.
+- **pdf-lib**: Used exclusively for **PDF inspection** (page count, validity check) before and after compression.
 
-- whether the document can be successfully parsed
-- the page count
-- the original file size (sourced directly from the `File` object)
-
-**pdf-lib is not the compression engine.** No compression of any kind is performed in this version.
-
-### Abstraction boundary
-
-All pdf-lib usage is isolated in `src/lib/pdfInspector.ts`. The rest of the application depends only on the `PdfInspectionResult` type and the `inspectPdf(file)` function exported from that module. pdf-lib types do not leak into other components.
-
-This boundary exists so that the underlying inspection or compression implementation can be replaced without changing the application or UI architecture.
+**Important Note on Original-File Passthrough:** If qpdf's structural optimization does not reduce the file size (e.g., the PDF is already efficiently packed), the extension automatically retains and returns the original file unaltered.
 
 ### Current capabilities
 
@@ -67,27 +57,16 @@ This boundary exists so that the underlying inspection or compression implementa
 |---|---|
 | Parse validity check | ✅ |
 | Page count | ✅ |
-| Original file size | ✅ |
-| Encrypted PDF detection | ✅ (detected, not bypassed) |
-| Compression | ❌ Not implemented |
-| Output generation | ❌ Not implemented |
+| Lossless structural compression | ✅ |
+| Web Worker offloading | ✅ |
+| Image resampling / re-encoding | ❌ Not implemented (Phase 5B) |
+| Output generation & Download | ✅ |
 
 ### Known limitations
 
-- **pdf-lib 1.17.1 is unmaintained.** The last npm release was in 2021. It remains functionally stable for inspection use, but will not receive security patches or compatibility updates. This is an accepted tradeoff for this phase.
-- **No image re-compression.** pdf-lib cannot extract, re-encode, and replace embedded images with changed quality settings. Any compression in a future phase will require either a different implementation or a hybrid approach.
-- **No WASM.** The current implementation is pure JavaScript. Higher-fidelity compression (e.g., Ghostscript-class) would require a WASM-based engine and a corresponding license review.
-- **Memory**: Very large PDFs (hundreds of MB) are parsed in-memory. There is no streaming parse path in pdf-lib.
-
-### Future compression architecture — open decision
-
-The final compression engine has **not been selected**. Candidates under consideration for a future phase include:
-
-- **Hybrid JS approach**: pdf-lib for structural rewriting + Canvas API for targeted image re-encoding. Preserves text/vector fidelity.
-- **WASM engine (e.g., MuPDF)**: Ghostscript-class compression quality. Requires resolving AGPL / commercial license before use in a potentially commercial extension.
-- **Image-reconstruction mode**: Render pages to canvas, re-encode as JPEG, rebuild PDF. High compression ratio but destroys text layer, accessibility, and copy/paste. Considered only as a fallback mode.
-
-This decision will be made in Phase 4 based on tested compression quality and license compliance.
+- **No image optimization yet:** This phase implements structural compression only. Large, uncompressed images (the most common cause of bloated PDFs) are not yet downsampled or converted to JPEG. Phase 5B will investigate an image-processing layer (via Canvas/OffscreenCanvas).
+- **Signed/Encrypted PDFs:** Digital signatures may be invalidated if the PDF structure is modified. Encrypted PDFs are currently detected and rejected during the inspection phase.
+- **Memory footprint:** Large PDFs are processed in-memory within the WASM heap. Exceptionally large files may cause memory allocation failures.
 
 ### Privacy
 
@@ -97,4 +76,4 @@ The PDF never leaves the device:
 - No external processing services are contacted
 - No analytics payloads include file information
 - No file content is stored persistently
-- No remote scripts are loaded
+- No remote scripts are loaded (WASM bundle is local)

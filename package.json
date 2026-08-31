@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@jspawn/qpdf-wasm": "^0.0.2",
     "@tailwindcss/vite": "latest",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "puppeteer": "^25.9.0",
     "typescript": "latest",
     "vite": "latest"
   }

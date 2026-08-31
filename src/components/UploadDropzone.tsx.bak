@@ -1,17 +1,26 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ChangeEvent, DragEvent } from 'react'
 import { FileUp, Upload } from 'lucide-react'
 import { validatePdfFile } from '../lib/pdfFile'
 import { inspectPdf } from '../lib/pdfInspector'
 import type { PdfInspectionResult } from '../lib/pdfInspector'
-import { CompressionClient } from '../lib/compression/CompressionClient'
-import type { CompressionResult } from '../lib/compression/CompressionEngine'
 import { FileError } from './FileError'
 import { InspectingFile } from './InspectingFile'
 import { PrimaryButton } from './PrimaryButton'
 import { ReadyFile } from './ReadyFile'
-import { CompressingFile } from './CompressingFile'
-import { CompressedResult } from './CompressedResult'
+
+// ---------------------------------------------------------------------------
+// State machine
+//
+//   idle ──────────────────────────────────────────────────────────┐
+//   dragging ──► (drop) ──► inspecting ──► ready                  │
+//   error ─────────────────────────────────────────────────────────┘
+//                                    └──► error
+//
+// The `file` is held inside the inspecting/ready states so it is accessible
+// during async inspection and remains the single source of truth for the
+// currently selected document.
+// ---------------------------------------------------------------------------
 
 type AppState =
   | { stage: 'idle' }
@@ -19,9 +28,6 @@ type AppState =
   | { stage: 'inspecting'; file: File }
   | { stage: 'ready'; file: File; inspection: Extract<PdfInspectionResult, { ok: true }> }
   | { stage: 'error'; message: string; reason?: 'encrypted' | 'malformed' | 'parse_error' | 'invalid' }
-  | { stage: 'compressing'; file: File; inspection: Extract<PdfInspectionResult, { ok: true }> }
-  | { stage: 'compressed'; file: File; inspection: Extract<PdfInspectionResult, { ok: true }>; result: Extract<CompressionResult, { ok: true }> }
-  | { stage: 'compressionError'; file: File; inspection: Extract<PdfInspectionResult, { ok: true }>; message: string }
 
 function hasFiles(event: DragEvent<HTMLElement>): boolean {
   return Array.from(event.dataTransfer.types).includes('Files')
@@ -31,18 +37,10 @@ export function UploadDropzone() {
   const [state, setState] = useState<AppState>({ stage: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
   const dragDepth = useRef(0)
-  
-  // Compression client instance
-  const clientRef = useRef<CompressionClient | null>(null)
 
-  useEffect(() => {
-    // Initialize compression client on mount
-    clientRef.current = new CompressionClient()
-    return () => {
-      clientRef.current?.terminate()
-    }
-  }, [])
-
+  // Stale-result protection: each file selection increments a token.
+  // The async inspection captures the token at its start; if the token has
+  // changed by the time it resolves, the result is discarded silently.
   const inspectionToken = useRef(0)
 
   const isDragging = state.stage === 'dragging'
@@ -64,6 +62,8 @@ export function UploadDropzone() {
     setState({ stage: 'inspecting', file })
 
     inspectPdf(file).then((result) => {
+      // If the user selected a different file while we were parsing,
+      // discard this result — do not overwrite the newer UI state.
       if (inspectionToken.current !== token) return
 
       if (result.ok) {
@@ -72,39 +72,6 @@ export function UploadDropzone() {
         setState({ stage: 'error', message: result.message, reason: result.reason })
       }
     })
-  }
-
-  const handleCompress = async () => {
-    if (state.stage !== 'ready') return
-    
-    const { file, inspection } = state
-    setState({ stage: 'compressing', file, inspection })
-    
-    try {
-      const arrayBuffer = await file.arrayBuffer()
-      const uint8Array = new Uint8Array(arrayBuffer)
-      
-      const result = await clientRef.current!.compress(uint8Array)
-      
-      if (result.ok) {
-        if (result.changed) {
-          // Output validation
-          const outputBlob = new Blob([result.output], { type: 'application/pdf' });
-          const outputFile = new File([outputBlob], file.name, { type: 'application/pdf' });
-          const outInspection = await inspectPdf(outputFile);
-          
-          if (!outInspection.ok) {
-            setState({ stage: 'compressionError', file, inspection, message: 'Generated PDF is invalid or corrupted.' });
-            return;
-          }
-        }
-        setState({ stage: 'compressed', file, inspection, result })
-      } else {
-        setState({ stage: 'compressionError', file, inspection, message: result.message })
-      }
-    } catch (err: any) {
-      setState({ stage: 'compressionError', file, inspection, message: err.message || 'An unknown error occurred.' })
-    }
   }
 
   const acceptFiles = (files: File[]) => {
@@ -142,12 +109,12 @@ export function UploadDropzone() {
     dragDepth.current += 1
     setState((current) => {
       if (current.stage === 'dragging') return current
-      if (current.stage === 'error' || current.stage === 'compressionError') {
+      if (current.stage === 'error') {
         return {
           stage: 'dragging',
           returnTo: 'error',
-          errorMessage: 'message' in current ? current.message : undefined,
-          errorReason: 'reason' in current ? current.reason : undefined,
+          errorMessage: current.message,
+          errorReason: current.reason,
         }
       }
       return { stage: 'dragging', returnTo: 'idle' }
@@ -211,30 +178,15 @@ export function UploadDropzone() {
           inspection={state.inspection}
           onChangeFile={openFilePicker}
           onRemoveFile={reset}
-          onCompress={handleCompress}
         />
       )
     }
 
-    if (state.stage === 'compressing') {
-      return <CompressingFile file={state.file} />
-    }
-
-    if (state.stage === 'compressed') {
-      return (
-        <CompressedResult
-          originalFile={state.file}
-          result={state.result}
-          onStartOver={reset}
-        />
-      )
-    }
-
-    if (state.stage === 'error' || state.stage === 'compressionError') {
+    if (state.stage === 'error') {
       return (
         <FileError
           message={state.message}
-          reason={'reason' in state ? state.reason : undefined}
+          reason={state.reason}
           onChooseAnotherFile={openFilePicker}
         />
       )
