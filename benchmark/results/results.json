@@ -1,0 +1,222 @@
+[
+  {
+    "file": "already-optimized.pdf",
+    "strategy": "qpdf-structural",
+    "strategyName": "qpdf: structural",
+    "ok": true,
+    "inputSize": 860,
+    "outputSize": 949,
+    "saved": -89,
+    "reduction": -10.348837209302324,
+    "elapsed": 19
+  },
+  {
+    "file": "already-optimized.pdf",
+    "strategy": "qpdf-l9",
+    "strategyName": "qpdf: structural+l9",
+    "ok": true,
+    "inputSize": 860,
+    "outputSize": 949,
+    "saved": -89,
+    "reduction": -10.348837209302324,
+    "elapsed": 5
+  },
+  {
+    "file": "already-optimized.pdf",
+    "strategy": "qpdf-all",
+    "strategyName": "qpdf: all+opt-images",
+    "ok": true,
+    "inputSize": 860,
+    "outputSize": 949,
+    "saved": -89,
+    "reduction": -10.348837209302324,
+    "elapsed": 6
+  },
+  {
+    "file": "already-optimized.pdf",
+    "strategy": "pdflib-rt",
+    "strategyName": "pdf-lib: round-trip",
+    "ok": true,
+    "inputSize": 860,
+    "outputSize": 865,
+    "saved": -5,
+    "reduction": -0.5813953488372093,
+    "elapsed": 139
+  },
+  {
+    "file": "multi-page-50p.pdf",
+    "strategy": "qpdf-structural",
+    "strategyName": "qpdf: structural",
+    "ok": true,
+    "inputSize": 36497,
+    "outputSize": 35835,
+    "saved": 662,
+    "reduction": 1.8138477135106994,
+    "elapsed": 44
+  },
+  {
+    "file": "multi-page-50p.pdf",
+    "strategy": "qpdf-l9",
+    "strategyName": "qpdf: structural+l9",
+    "ok": true,
+    "inputSize": 36497,
+    "outputSize": 35835,
+    "saved": 662,
+    "reduction": 1.8138477135106994,
+    "elapsed": 31
+  },
+  {
+    "file": "multi-page-50p.pdf",
+    "strategy": "qpdf-all",
+    "strategyName": "qpdf: all+opt-images",
+    "ok": true,
+    "inputSize": 36497,
+    "outputSize": 35835,
+    "saved": 662,
+    "reduction": 1.8138477135106994,
+    "elapsed": 47
+  },
+  {
+    "file": "multi-page-50p.pdf",
+    "strategy": "pdflib-rt",
+    "strategyName": "pdf-lib: round-trip",
+    "ok": true,
+    "inputSize": 36497,
+    "outputSize": 36501,
+    "saved": -4,
+    "reduction": -0.010959804915472503,
+    "elapsed": 61
+  },
+  {
+    "file": "presentation-12p.pdf",
+    "strategy": "qpdf-structural",
+    "strategyName": "qpdf: structural",
+    "ok": true,
+    "inputSize": 7671,
+    "outputSize": 7685,
+    "saved": -14,
+    "reduction": -0.18250554034676053,
+    "elapsed": 6
+  },
+  {
+    "file": "presentation-12p.pdf",
+    "strategy": "qpdf-l9",
+    "strategyName": "qpdf: structural+l9",
+    "ok": true,
+    "inputSize": 7671,
+    "outputSize": 7685,
+    "saved": -14,
+    "reduction": -0.18250554034676053,
+    "elapsed": 5
+  },
+  {
+    "file": "presentation-12p.pdf",
+    "strategy": "qpdf-all",
+    "strategyName": "qpdf: all+opt-images",
+    "ok": true,
+    "inputSize": 7671,
+    "outputSize": 7685,
+    "saved": -14,
+    "reduction": -0.18250554034676053,
+    "elapsed": 8
+  },
+  {
+    "file": "presentation-12p.pdf",
+    "strategy": "pdflib-rt",
+    "strategyName": "pdf-lib: round-trip",
+    "ok": true,
+    "inputSize": 7671,
+    "outputSize": 7674,
+    "saved": -3,
+    "reduction": -0.03910833007430582,
+    "elapsed": 3
+  },
+  {
+    "file": "single-page.pdf",
+    "strategy": "qpdf-structural",
+    "strategyName": "qpdf: structural",
+    "ok": true,
+    "inputSize": 956,
+    "outputSize": 1041,
+    "saved": -85,
+    "reduction": -8.891213389121338,
+    "elapsed": 2
+  },
+  {
+    "file": "single-page.pdf",
+    "strategy": "qpdf-l9",
+    "strategyName": "qpdf: structural+l9",
+    "ok": true,
+    "inputSize": 956,
+    "outputSize": 1041,
+    "saved": -85,
+    "reduction": -8.891213389121338,
+    "elapsed": 2
+  },
+  {
+    "file": "single-page.pdf",
+    "strategy": "qpdf-all",
+    "strategyName": "qpdf: all+opt-images",
+    "ok": true,
+    "inputSize": 956,
+    "outputSize": 1041,
+    "saved": -85,
+    "reduction": -8.891213389121338,
+    "elapsed": 3
+  },
+  {
+    "file": "single-page.pdf",
+    "strategy": "pdflib-rt",
+    "strategyName": "pdf-lib: round-trip",
+    "ok": true,
+    "inputSize": 956,
+    "outputSize": 959,
+    "saved": -3,
+    "reduction": -0.3138075313807531,
+    "elapsed": 2
+  },
+  {
+    "file": "text-heavy-20p.pdf",
+    "strategy": "qpdf-structural",
+    "strategyName": "qpdf: structural",
+    "ok": true,
+    "inputSize": 19131,
+    "outputSize": 18982,
+    "saved": 149,
+    "reduction": 0.7788406251633475,
+    "elapsed": 14
+  },
+  {
+    "file": "text-heavy-20p.pdf",
+    "strategy": "qpdf-l9",
+    "strategyName": "qpdf: structural+l9",
+    "ok": true,
+    "inputSize": 19131,
+    "outputSize": 18982,
+    "saved": 149,
+    "reduction": 0.7788406251633475,
+    "elapsed": 14
+  },
+  {
+    "file": "text-heavy-20p.pdf",
+    "strategy": "qpdf-all",
+    "strategyName": "qpdf: all+opt-images",
+    "ok": true,
+    "inputSize": 19131,
+    "outputSize": 18982,
+    "saved": 149,
+    "reduction": 0.7788406251633475,
+    "elapsed": 27
+  },
+  {
+    "file": "text-heavy-20p.pdf",
+    "strategy": "pdflib-rt",
+    "strategyName": "pdf-lib: round-trip",
+    "ok": true,
+    "inputSize": 19131,
+    "outputSize": 19135,
+    "saved": -4,
+    "reduction": -0.02090847315874758,
+    "elapsed": 22
+  }
+]
