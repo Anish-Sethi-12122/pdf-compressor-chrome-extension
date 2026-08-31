@@ -1,0 +1,196 @@
+# ==============================================================================
+# Comprehensive .gitignore for PDF Compressor (Chrome Extension / Vite + React + TS)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Dependencies & Package Managers
+# ------------------------------------------------------------------------------
+node_modules/
+jspm_packages/
+web_modules/
+.npm
+.pnpm-store/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp
+.pnp.*
+
+# ------------------------------------------------------------------------------
+# 2. Build Outputs & Bundler Caches (Vite, Rollup, TypeScript)
+# ------------------------------------------------------------------------------
+dist/
+dist-ssr/
+dist-zip/
+dist-extension/
+build/
+out/
+release/
+.vite/
+.rollup.cache/
+.parcel-cache/
+.turbo/
+.cache/
+*.tsbuildinfo
+
+# ------------------------------------------------------------------------------
+# 3. Chrome / Browser Extension Artifacts & Private Keys
+# ------------------------------------------------------------------------------
+# Extension packages and CRX manifests
+*.crx
+*.xpi
+*.pem
+*.key
+*.certificate
+
+# Packaged distribution zips (keep project root clean)
+/pdf-compressor-extension.zip
+/extension.zip
+/release-*.zip
+
+# ------------------------------------------------------------------------------
+# 4. Environment Variables & Secret Configuration Files
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+*.env
+secrets.json
+
+# ------------------------------------------------------------------------------
+# 5. Logs, Diagnostics & Process Files
+# ------------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+vite.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ------------------------------------------------------------------------------
+# 6. Testing, Benchmarks & Code Coverage
+# ------------------------------------------------------------------------------
+coverage/
+*.lcov
+.nyc_output/
+.vitest/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+cypress/videos/
+cypress/screenshots/
+
+# ------------------------------------------------------------------------------
+# 7. Linter & Formatter Caches
+# ------------------------------------------------------------------------------
+.eslintcache
+.stylelintcache
+.prettiercache
+.lintstagedrc.json.cache
+
+# ------------------------------------------------------------------------------
+# 8. Temporary & Generated PDF / Output Dumps
+# ------------------------------------------------------------------------------
+tmp/
+temp/
+outputs/
+compressed/
+*.tmp
+*.temp
+*-compressed.pdf
+*-output.pdf
+
+# Preserve committed test fixtures
+!test-fixtures/
+!test-fixtures/**
+
+# ------------------------------------------------------------------------------
+# 9. WebAssembly (WASM) & Native Build Caches (Future Engine Candidates)
+# ------------------------------------------------------------------------------
+*.wasm.map
+emscripten-cache/
+cmake-build-*/
+*.obj
+*.o
+*.dylib
+*.dll
+*.so
+
+# ------------------------------------------------------------------------------
+# 10. IDEs, Text Editors & Development Environments
+# ------------------------------------------------------------------------------
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+.ionide/
+
+# JetBrains (WebStorm, IntelliJ IDEA, etc.)
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Vim & Emacs swap/backup files
+*~
+*.swp
+*.swo
+.*.sw[a-z]
+#*#
+.#*
+
+# ------------------------------------------------------------------------------
+# 11. Operating System Generated Files
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+.fuse_hidden*
