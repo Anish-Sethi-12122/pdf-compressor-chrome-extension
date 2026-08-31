@@ -194,3 +194,21 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 .fuse_hidden*
+
+# ------------------------------------------------------------------------------
+# 12. Phase 6 Spike Toolchains & Temporaries
+# ------------------------------------------------------------------------------
+emsdk/
+zlib/
+jpeg/
+qpdf/
+.venv/
+test*.js
+test*.cjs
+test*.pdf
+test*.jpg
+test*.png
+output*.pdf
+qpdf_wrapper.js
+qpdf_wrapper.wasm
+
