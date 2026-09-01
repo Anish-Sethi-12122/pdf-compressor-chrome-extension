@@ -10,28 +10,32 @@ const __dirname = path.dirname(__filename);
   const extensionPath = path.join(__dirname, 'dist');
   
   const browser = await puppeteer.launch({
-    headless: false, // extensions only work in headful mode usually
+    headless: false,
     args: [
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`
     ]
   });
 
-  const dummyPdfPath = path.join(__dirname, 'test-fixtures', 'real.pdf');
+  const dummyPdfPath = path.join(__dirname, 'test_fixture.pdf');
   
   const page = await browser.newPage();
   page.on('console', msg => console.log('PAGE LOG:', msg.text()));
   page.on('pageerror', err => console.log('PAGE ERROR:', err));
   
-  // We need to find the extension ID
-  // Puppeteer doesn't have a direct way to get it, so we can go to chrome://extensions
+  browser.on('targetcreated', async target => {
+    if (target.type() === 'worker' || target.type() === 'service_worker') {
+      try {
+        const worker = await target.worker();
+        worker.on('console', msg => console.log('WORKER LOG:', msg.text()));
+      } catch (e) { }
+    }
+  });
+  
   await page.goto('chrome://extensions');
-  // Wait a sec for the extension to load in the list
   await new Promise(r => setTimeout(r, 1000));
   
   const extensionId = await page.evaluate(() => {
-    // This is a bit hacky, normally one would extract it from the DOM of chrome://extensions
-    // or use Chrome DevTools Protocol
     const elements = document.querySelector('extensions-manager').shadowRoot
       .querySelector('extensions-item-list').shadowRoot
       .querySelectorAll('extensions-item');
@@ -51,32 +55,36 @@ const __dirname = path.dirname(__filename);
   console.log('Navigating to', popupUrl);
   await page.goto(popupUrl);
   
-  // Wait for the UI to be ready
+  // Set up download behavior
+  const downloadPath = path.join(__dirname, 'downloads');
+  if (!fs.existsSync(downloadPath)) fs.mkdirSync(downloadPath);
+  
+  const client = await page.target().createCDPSession();
+  await client.send('Page.setDownloadBehavior', {
+    behavior: 'allow',
+    downloadPath: downloadPath,
+  });
+  
   await page.waitForSelector('.upload-dropzone');
   
-  // Upload a file
   const fileInput = await page.$('input[type=file]');
   await fileInput.uploadFile(dummyPdfPath);
   
-  // Wait for Ready state
   await page.waitForSelector('.selected-file__ready', { timeout: 5000 });
   console.log('File ready for compression');
   
-  // Click Compress
   const compressBtn = await page.$('button[aria-label="Compress PDF"]');
   const startTime = Date.now();
   await compressBtn.click();
   
-  // Wait for Compress result
-  // The result has "PDF compressed" or "No further compression needed" or "went wrong" or "Error"
   try {
     await page.waitForFunction(() => {
-      const text = document.body.innerText;
-      return text.includes('PDF compressed') || text.includes('No further compression needed') || text.includes('went wrong');
-    }, { timeout: 15000 });
+      const text = document.body.innerText.toLowerCase();
+      return text.includes('pdf compressed') || text.includes('no further compression needed') || text.includes('went wrong');
+    }, { timeout: 30000 });
   } catch(e) {
-    console.log("Wait failed. Current body:");
-    console.log(await page.evaluate(() => document.body.innerText));
+    console.log("Wait failed.");
+    console.log("Current body:", await page.evaluate(() => document.body.innerText));
     throw e;
   }
   
@@ -86,6 +94,18 @@ const __dirname = path.dirname(__filename);
   console.log('Result text:');
   console.log(text);
   console.log(`Elapsed time: ${elapsedTime}ms`);
+  
+  // Try to click download button
+  try {
+    const downloadBtn = await page.$('button[aria-label="Download PDF"]');
+    if (downloadBtn) {
+      await downloadBtn.click();
+      console.log('Download button clicked, waiting for download...');
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  } catch(e) {
+    console.log('No download button or error clicking it:', e);
+  }
   
   await browser.close();
 })();

@@ -27,31 +27,23 @@ import { validateOutputPdf, structuralPreCheck } from './pdfValidator';
 import type { ImageMetadata } from './imageTypes';
 
 // @ts-ignore
-import qpdfUrl from '/qpdf_wrapper.js?url';
+import createQpdfModule from '../../../qpdf_wrapper.js';
 // @ts-ignore
-import wasmUrlRaw from '/qpdf_wrapper.wasm?url';
+import wasmUrlRaw from '../../../qpdf_wrapper.wasm?url';
 
 // ---------------------------------------------------------------------------
 // WASM module loader (lazy singleton)
 // ---------------------------------------------------------------------------
 
-// The WASM module lives at the project root and is served as a static asset.
-// Vite handles bundling/URL resolution via assetsInclude + ?url import.
 let modulePromise: Promise<any> | null = null;
 
 async function getQpdfModule(): Promise<any> {
   if (!modulePromise) {
     modulePromise = (async () => {
-      // Dynamic import of the local WASM JS loader.
-      // Path is relative to THIS file's location in the compiled bundle.
-      // Vite's worker bundler resolves this to the correct asset URL.
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const factory = (await import(/* @vite-ignore */ qpdfUrl)).default;
       // Resolve the WASM URL using the hashed asset URL from Vite
       const wasmUrl = new URL(wasmUrlRaw, self.location.href).href;
 
-      const mod = await factory({
+      const mod = await createQpdfModule({
         locateFile: (path: string) => {
           if (path.endsWith('.wasm')) return wasmUrl;
           return path;
@@ -229,8 +221,9 @@ export class QpdfCompressionEngine implements CompressionEngine {
             imagesModified++;
             console.log(
               `[QpdfEngine] Replaced obj ${candidate.objectId}: ` +
-              `${(result.originalBytes / 1024).toFixed(1)}KB → ${(result.candidateBytes / 1024).toFixed(1)}KB ` +
-              `(${result.resized ? `resized ${result.originalWidth}×${result.originalHeight}→${result.outputWidth}×${result.outputHeight}, ` : ''}q=${result.quality})`
+              `bytes: ${(result.originalBytes / 1024).toFixed(1)}KB → ${(result.candidateBytes / 1024).toFixed(1)}KB | ` +
+              `dim: ${result.originalWidth}x${result.originalHeight} → ${result.outputWidth}x${result.outputHeight} | ` +
+              `quality: ${result.quality} | threshold: 10% | ACCEPTED`
             );
           } catch (err: unknown) {
             console.warn(`[QpdfEngine] replaceImage failed for obj ${candidate.objectId}:`, err);
@@ -328,7 +321,8 @@ export class QpdfCompressionEngine implements CompressionEngine {
       output: pass2Bytes,
       stats,
       changed: true,
-    };
+      skipReasons: skipped.map(s => s.reason).join(',') + " imagesModified=" + imagesModified
+    } as any;
   }
 }
 
