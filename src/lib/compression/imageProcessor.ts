@@ -151,6 +151,7 @@ export async function processImage(
     const threshold = originalBytes * (1 - REPLACEMENT_THRESHOLD);
     if (candidateBytes >= threshold) {
       // Not materially smaller — keep original to avoid generational loss.
+      console.warn(`[imageProcessor] Skipped obj ${objectId}: new ${candidateBytes} >= threshold ${threshold} (orig ${originalBytes})`);
       return { accepted: false, objectId, generation, reason: 'not_smaller' };
     }
 

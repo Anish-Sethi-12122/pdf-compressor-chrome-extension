@@ -26,6 +26,11 @@ import { processImage } from './imageProcessor';
 import { validateOutputPdf, structuralPreCheck } from './pdfValidator';
 import type { ImageMetadata } from './imageTypes';
 
+// @ts-ignore
+import qpdfUrl from '/qpdf_wrapper.js?url';
+// @ts-ignore
+import wasmUrlRaw from '/qpdf_wrapper.wasm?url';
+
 // ---------------------------------------------------------------------------
 // WASM module loader (lazy singleton)
 // ---------------------------------------------------------------------------
@@ -41,10 +46,10 @@ async function getQpdfModule(): Promise<any> {
       // Path is relative to THIS file's location in the compiled bundle.
       // Vite's worker bundler resolves this to the correct asset URL.
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore — local WASM JS file has no .d.ts; typed via src/types/qpdf.d.ts
-      const factory = (await import(/* @vite-ignore */ '/qpdf_wrapper.js')).default;
-      // The WASM file is served from the extension root (public/ → dist/)
-      const wasmUrl = new URL('/qpdf_wrapper.wasm', self.location.href).href;
+      // @ts-ignore
+      const factory = (await import(/* @vite-ignore */ qpdfUrl)).default;
+      // Resolve the WASM URL using the hashed asset URL from Vite
+      const wasmUrl = new URL(wasmUrlRaw, self.location.href).href;
 
       const mod = await factory({
         locateFile: (path: string) => {
@@ -185,7 +190,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
         processedObjectIds.add(candidate.objectId);
 
         // Extract the current JPEG stream bytes from the WASM compressor
-        let jpegBytes: Uint8Array;
+        let jpegBytes: Uint8Array | null = null;
         try {
           // Extract the JPEG stream bytes for this object from the optimised PDF bytes.
           // If extraction fails, the image is skipped (failure isolation per spec §25).
@@ -333,87 +338,24 @@ export class QpdfCompressionEngine implements CompressionEngine {
 
 /**
  * Extracts the raw encoded bytes of an image stream from a PDF.
- *
- * Strategy: we use the Emscripten FS to write the PDF temporarily, then
- * extract the stream data via a second PDFCompressor instance that calls
- * qpdf's getStreamData / pushInheritedAttributesToPage approach.
- *
- * Since the qpdf Embind binding does not directly expose getStreamData,
- * we use a workaround: re-create the compressor, call save() to emit the
- * PDF with preserved streams, then read back image bytes by locating the
- * JPEG SOI marker sequence at the object boundary.
- *
- * IMPORTANT: This is a best-effort extraction path. If extraction fails,
- * the image is skipped (failure isolation per spec section 25).
+ * Uses exact extraction via the C++ `getStreamData` method.
  */
 async function extractImageStream(
   mod: any,
   pdfBytes: Uint8Array,
   objectId: number,
   generation: number,
-): Promise<Uint8Array> {
-  // Use the Emscripten FS to write + access the raw PDF bytes, then
-  // locate the JPEG stream using byte-level search for SOI (FF D8 FF).
-  // This avoids needing a full JS-side stream decoder.
-
-  // Write the PDF to the WASM FS (uses Emscripten's MEMFS)
-  const filename = `extract_${objectId}_${generation}_${Date.now()}.pdf`;
+): Promise<Uint8Array | null> {
+  let compressor: any;
   try {
-    mod.FS.writeFile(filename, pdfBytes);
-  } catch {
-    // FS may not be available — fallback: create a fresh compressor and use raw bytes
-    return extractViaRawByteScan(pdfBytes, objectId, generation);
+    compressor = new mod.PDFCompressor(pdfBytes);
+    const data = compressor.getStreamData(objectId, generation);
+    if (!data) return null;
+    return new Uint8Array(data);
+  } catch (err) {
+    console.warn(`[QpdfEngine] Failed to extract stream for obj ${objectId}:`, err);
+    return null;
+  } finally {
+    if (compressor) compressor.delete?.();
   }
-
-  try {
-    // Clean up and return via raw scan (FS write confirmed the file is accessible)
-    mod.FS.unlink(filename);
-  } catch { /* ignore cleanup errors */ }
-
-  // The most reliable extraction: scan the raw PDF bytes for the JPEG SOI sequence
-  // associated with this object. This is NOT regex-on-PDF-structure; it's locating
-  // the JPEG data within a known DCTDecode stream.
-  return extractViaRawByteScan(pdfBytes, objectId, generation);
-}
-
-/**
- * Scan PDF bytes for JPEG streams (SOI marker FF D8 FF) and extract them.
- * Returns the first valid JPEG found in the byte range where we expect the object.
- *
- * This is a targeted scan for JPEG magic bytes ONLY — not PDF structure parsing.
- * It is safe because:
- *   - We only apply it to objects already confirmed as DCTDecode JPEG by qpdf
- *   - We scan for JPEG SOI (FF D8 FF) + EOI (FF D9) — reliable JPEG boundaries
- *   - If we can't find a clean JPEG, we return empty (image gets skipped safely)
- */
-function extractViaRawByteScan(pdfBytes: Uint8Array, _objectId: number, _generation: number): Uint8Array {
-  // Find all JPEG SOI markers (FF D8 FF) in the PDF
-  const jpegStarts: number[] = [];
-  for (let i = 0; i < pdfBytes.length - 2; i++) {
-    if (pdfBytes[i] === 0xFF && pdfBytes[i + 1] === 0xD8 && pdfBytes[i + 2] === 0xFF) {
-      jpegStarts.push(i);
-    }
-  }
-
-  if (jpegStarts.length === 0) return new Uint8Array(0);
-
-  // For each JPEG start, find the matching EOI (FF D9)
-  // Return the largest JPEG found (most likely to be a real image, not a thumbnail)
-  let bestJpeg: Uint8Array = new Uint8Array(0);
-
-  for (const start of jpegStarts) {
-    // Scan forward from start for EOI
-    for (let i = start + 2; i < pdfBytes.length - 1; i++) {
-      if (pdfBytes[i] === 0xFF && pdfBytes[i + 1] === 0xD9) {
-        const end = i + 2;
-        const jpegSlice = pdfBytes.slice(start, end);
-        if (jpegSlice.length > bestJpeg.length) {
-          bestJpeg = jpegSlice;
-        }
-        break; // only one EOI per JPEG
-      }
-    }
-  }
-
-  return bestJpeg;
 }

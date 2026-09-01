@@ -211,4 +211,7 @@ test*.png
 output*.pdf
 qpdf_wrapper.js
 qpdf_wrapper.wasm
+!public/qpdf_wrapper.js
+!public/qpdf_wrapper.wasm
+benchmark_results.json
 

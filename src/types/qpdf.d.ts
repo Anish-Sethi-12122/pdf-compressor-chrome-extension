@@ -27,6 +27,9 @@ export interface PDFCompressor {
   /** Returns array of image XObject descriptors from the loaded PDF. */
   inspectImages(): RawImageInfo[];
 
+  /** Returns exact raw stream bytes of an object, or null if it fails. */
+  getStreamData(objId: number, gen: number): Uint8Array | null;
+
   /**
    * Replace the JPEG stream of a specific image object.
    * Also updates /Width and /Height in the dict when dimensions change.

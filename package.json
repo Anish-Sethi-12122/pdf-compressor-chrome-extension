@@ -21,7 +21,9 @@
   "devDependencies": {
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "finalhandler": "^2.1.1",
     "puppeteer": "^25.9.0",
+    "serve-static": "^2.2.1",
     "typescript": "latest",
     "vite": "latest"
   }

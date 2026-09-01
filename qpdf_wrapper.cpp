@@ -144,6 +144,23 @@ public:
     }
 
     // -----------------------------------------------------------------------
+    // getStreamData — exact raw bytes of the stream
+    // -----------------------------------------------------------------------
+    val getStreamData(int obj_id, int gen) {
+        QPDFObjectHandle obj = pdf.getObjectByID(obj_id, gen);
+        if (!obj.isStream()) {
+            return val::null();
+        }
+
+        std::shared_ptr<Buffer> buf = obj.getRawStreamData();
+        if (!buf) {
+            return val::null();
+        }
+
+        return val(typed_memory_view(buf->getSize(), buf->getBuffer()));
+    }
+
+    // -----------------------------------------------------------------------
     // replaceImage — replace JPEG stream, optionally update dimensions
     // -----------------------------------------------------------------------
     void replaceImage(int obj_id, int gen, val new_data, int new_width, int new_height) {
@@ -212,6 +229,7 @@ EMSCRIPTEN_BINDINGS(qpdf_wrapper) {
     class_<PDFCompressor>("PDFCompressor")
         .constructor<val>()
         .function("inspectImages",       &PDFCompressor::inspectImages)
+        .function("getStreamData",       &PDFCompressor::getStreamData)
         .function("replaceImage",        &PDFCompressor::replaceImage)
         .function("structuralOptimize",  &PDFCompressor::structuralOptimize)
         .function("save",                &PDFCompressor::save)
