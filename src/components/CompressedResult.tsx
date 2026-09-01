@@ -11,18 +11,17 @@ type CompressedResultProps = {
 
 export function CompressedResult({ originalFile, result, onStartOver }: CompressedResultProps) {
   const handleDownload = () => {
-    // Determine file name
+    // Derive filename: original.pdf → original-compressed.pdf
     const originalName = originalFile.name
-    const nameParts = originalName.split('.')
-    const ext = nameParts.pop()
-    const base = nameParts.join('.') || 'document'
+    const lastDot = originalName.lastIndexOf('.')
+    const base = lastDot > 0 ? originalName.slice(0, lastDot) : originalName
+    const ext = lastDot > 0 ? originalName.slice(lastDot + 1) : 'pdf'
     const newName = `${base}-compressed.${ext}`
 
-    // Create Blob
+    // Native browser download — no `downloads` permission required
     const blob = new Blob([result.output as BlobPart], { type: 'application/pdf' })
     const url = URL.createObjectURL(blob)
 
-    // Trigger download
     const a = document.createElement('a')
     a.href = url
     a.download = newName
@@ -30,29 +29,28 @@ export function CompressedResult({ originalFile, result, onStartOver }: Compress
     a.click()
     document.body.removeChild(a)
 
-    // Cleanup URL
-    setTimeout(() => {
-      URL.revokeObjectURL(url)
-    }, 1000)
+    // Revoke after a short delay so the browser has time to initiate the download
+    setTimeout(() => URL.revokeObjectURL(url), 1500)
   }
 
-  const originalSize = formatFileSize(result.inputBytes)
-  const newSize = formatFileSize(result.outputBytes)
-  
+  const { stats, changed } = result
+  const originalSize = formatFileSize(stats.inputBytes)
+  const newSize = formatFileSize(stats.outputBytes)
+
   return (
     <div className="selected-file" aria-live="polite">
       <div className="selected-file__icon" aria-hidden="true">
         <FileText strokeWidth={1.65} />
       </div>
       <div className="selected-file__details">
-        {result.changed ? (
+        {changed ? (
           <>
             <span className="selected-file__eyebrow">PDF compressed</span>
             <h2 title={originalFile.name}>{originalFile.name}</h2>
             <p>
               {originalSize} &rarr; {newSize}
             </p>
-            <p>Saved {result.savedPercent.toFixed(1)}%</p>
+            <p>Saved {stats.savedPercent.toFixed(1)}%</p>
           </>
         ) : (
           <>
@@ -63,7 +61,10 @@ export function CompressedResult({ originalFile, result, onStartOver }: Compress
           </>
         )}
       </div>
-      <div className="selected-file__actions" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div
+        className="selected-file__actions"
+        style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+      >
         <PrimaryButton onClick={handleDownload} aria-label="Download PDF">
           <Download aria-hidden="true" size={16} strokeWidth={2.1} />
           Download PDF

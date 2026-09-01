@@ -4,11 +4,33 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+
+  // Treat .wasm files as static assets so Vite emits them with stable URLs
+  // and the ?url import syntax works inside the Web Worker.
+  assetsInclude: ['**/*.wasm'],
+
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // pdf-lib is ~620 KB minified and cannot be split further.
-    // This is expected and acceptable for a local extension bundle.
-    chunkSizeWarningLimit: 700,
+
+    // pdf-lib is ~620 KB minified — expected and acceptable for a local extension bundle.
+    chunkSizeWarningLimit: 1000,
+
+    rollupOptions: {
+      output: {
+        // Keep WASM files adjacent to the JS that loads them
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.wasm')) {
+            return 'assets/[name][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        },
+      },
+    },
+  },
+
+  worker: {
+    // ES module workers are required for Vite's ?worker import syntax in MV3
+    format: 'es',
   },
 })

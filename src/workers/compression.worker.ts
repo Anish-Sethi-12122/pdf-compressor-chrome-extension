@@ -1,3 +1,13 @@
+/**
+ * Compression Web Worker — Phase 7A
+ *
+ * Receives ArrayBuffer from the main thread, runs the full Balanced
+ * compression pipeline inside the worker, and posts back the result.
+ *
+ * The main thread is responsible for UI only.
+ * All qpdf WASM + image processing happens here.
+ */
+
 import { QpdfCompressionEngine } from '../lib/compression/QpdfCompressionEngine';
 import type { CompressionOptions, CompressionResult } from '../lib/compression/CompressionEngine';
 
@@ -18,42 +28,39 @@ const engine = new QpdfCompressionEngine();
 
 self.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
   const req = event.data;
-  
+
   if (req.type === 'compress') {
+    const options: CompressionOptions = req.options ?? { preset: 'balanced' };
+
     try {
       const inputArr = new Uint8Array(req.input);
-      const result = await engine.compress(inputArr, req.options);
-      
+      const result = await engine.compress(inputArr, options);
+
       const response: WorkerResponse = {
         type: 'result',
         id: req.id,
-        result
+        result,
       };
 
-      // If compression was successful, transfer the output buffer back
-      if (result.ok && result.output.buffer !== req.input) {
-        if (result.changed) {
-          (self as any).postMessage(response, [result.output.buffer]);
-        } else {
-          (self as any).postMessage(response, [result.output.buffer]);
-        }
-      } else if (result.ok) {
-        (self as any).postMessage(response, [result.output.buffer]);
+      if (result.ok && result.changed) {
+        // Transfer the output buffer back — avoid copying large ArrayBuffers
+        (self as unknown as Worker).postMessage(response, [result.output.buffer]);
       } else {
-        (self as any).postMessage(response);
+        // Error result or unchanged original — no transferable needed
+        (self as unknown as Worker).postMessage(response);
       }
-    } catch (e: any) {
+    } catch (err: unknown) {
       const errorResult: CompressionResult = {
         ok: false,
         reason: 'compression_error',
-        message: e?.message || 'Worker exception',
+        message: err instanceof Error ? err.message : 'Worker exception',
       };
       const response: WorkerResponse = {
         type: 'result',
         id: req.id,
         result: errorResult,
       };
-      self.postMessage(response);
+      (self as unknown as Worker).postMessage(response);
     }
   }
 });

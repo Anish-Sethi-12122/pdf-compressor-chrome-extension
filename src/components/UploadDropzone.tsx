@@ -76,34 +76,24 @@ export function UploadDropzone() {
 
   const handleCompress = async () => {
     if (state.stage !== 'ready') return
-    
+
     const { file, inspection } = state
     setState({ stage: 'compressing', file, inspection })
-    
+
     try {
       const arrayBuffer = await file.arrayBuffer()
       const uint8Array = new Uint8Array(arrayBuffer)
-      
-      const result = await clientRef.current!.compress(uint8Array)
-      
+
+      const result = await clientRef.current!.compress(uint8Array, { preset: 'balanced' })
+
       if (result.ok) {
-        if (result.changed) {
-          // Output validation
-          const outputBlob = new Blob([result.output], { type: 'application/pdf' });
-          const outputFile = new File([outputBlob], file.name, { type: 'application/pdf' });
-          const outInspection = await inspectPdf(outputFile);
-          
-          if (!outInspection.ok) {
-            setState({ stage: 'compressionError', file, inspection, message: 'Generated PDF is invalid or corrupted.' });
-            return;
-          }
-        }
         setState({ stage: 'compressed', file, inspection, result })
       } else {
         setState({ stage: 'compressionError', file, inspection, message: result.message })
       }
-    } catch (err: any) {
-      setState({ stage: 'compressionError', file, inspection, message: err.message || 'An unknown error occurred.' })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.'
+      setState({ stage: 'compressionError', file, inspection, message })
     }
   }
 
