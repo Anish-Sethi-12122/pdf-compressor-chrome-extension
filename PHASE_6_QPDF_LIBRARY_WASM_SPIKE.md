@@ -23,7 +23,7 @@ We successfully built a bespoke C++ wrapper around the `qpdf` library and compil
    - `PDFCompressor::save()`: Emits a serialized PDF to an in-memory buffer (`QPDFWriter::setOutputMemory()`) and returns a zero-copy `Uint8Array` back to JavaScript.
 
 3. **Performance & Size**:
-   - Binary size: `qpdf_wrapper.wasm` is incredibly small—only **871 KB** uncompressed. It will be well under 400 KB over the wire, making it perfect for a Manifest V3 Service Worker.
+   - Binary size: `qpdf_wrapper.wasm` is incredibly small—only **871 KB** uncompressed. It will be well under 400 KB over the wire, making it perfect for a Chrome Extension Web Worker.
    - Boot speed: Embind and the WASM runtime bootstrap essentially instantly.
 
 4. **Synthetic Testing**:

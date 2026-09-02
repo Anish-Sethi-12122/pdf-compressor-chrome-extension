@@ -87,6 +87,8 @@ export function UploadDropzone() {
       const result = await clientRef.current!.compress(uint8Array, { preset: 'balanced' })
 
       if (result.ok) {
+        // Expose for alpha testing script
+        ;(window as any).__TEST_RESULT__ = result
         setState({ stage: 'compressed', file, inspection, result })
       } else {
         setState({ stage: 'compressionError', file, inspection, message: result.message })

@@ -46,10 +46,10 @@ The extension requires `wasm-unsafe-eval` CSP for execution but requests **0 per
 
 ### Role in this project
 
-- **qpdf-wasm**: Used exclusively for **lossless structural optimization**. It runs in a dedicated Web Worker to linearize, generate object streams, and recompress Flate streams.
-- **pdf-lib**: Used exclusively for **PDF inspection** (page count, validity check) before and after compression.
+- **qpdf-wasm**: Custom compiled WASM module for both **lossless structural optimization** and **image stream extraction/replacement**. It runs in a dedicated Web Worker to linearize, optimize streams, and replace large images with re-encoded JPEGs.
+- **pdf-lib**: Used for **PDF inspection** (page count, validity check) before and after compression.
 
-**Important Note on Original-File Passthrough:** If qpdf's structural optimization does not reduce the file size (e.g., the PDF is already efficiently packed), the extension automatically retains and returns the original file unaltered.
+**Important Note on Original-File Passthrough:** If the engine's optimization does not yield a meaningfully smaller file, the extension automatically retains and returns the original file unaltered.
 
 ### Current capabilities
 
@@ -59,14 +59,14 @@ The extension requires `wasm-unsafe-eval` CSP for execution but requests **0 per
 | Page count | ✅ |
 | Lossless structural compression | ✅ |
 | Web Worker offloading | ✅ |
-| Image resampling / re-encoding | ❌ Not implemented (Phase 5B) |
+| Image resampling / re-encoding | ✅ (Balanced preset) |
 | Output generation & Download | ✅ |
 
 ### Known limitations
 
-- **No image optimization yet:** This phase implements structural compression only. Large, uncompressed images (the most common cause of bloated PDFs) are not yet downsampled or converted to JPEG. Phase 5B will investigate an image-processing layer (via Canvas/OffscreenCanvas).
-- **Signed/Encrypted PDFs:** Digital signatures may be invalidated if the PDF structure is modified. Encrypted PDFs are currently detected and rejected during the inspection phase.
-- **Memory footprint:** Large PDFs are processed in-memory within the WASM heap. Exceptionally large files may cause memory allocation failures.
+- **Lossy Image Compression:** Currently uses a "Balanced" preset (JPEG quality 0.82, downsample to 2400px longest edge) to compress images. Text and vector content remain losslessly preserved.
+- **Signed/Encrypted PDFs:** Digital signatures may be invalidated if the PDF structure is modified. Encrypted PDFs are detected and rejected during the inspection phase.
+- **Memory footprint:** Processed sequentially, but exceptionally large PDFs may still cause memory allocation failures.
 
 ### Privacy
 
