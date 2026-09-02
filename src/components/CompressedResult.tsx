@@ -54,9 +54,9 @@ export function CompressedResult({ originalFile, result, onStartOver }: Compress
           </>
         ) : (
           <>
-            <span className="selected-file__eyebrow">No further compression needed</span>
+            <span className="selected-file__eyebrow">No meaningful savings</span>
             <h2 title={originalFile.name}>{originalFile.name}</h2>
-            <p>This PDF is already efficiently compressed.</p>
+            <p style={{ marginTop: '10px' }}>No meaningfully smaller valid candidate was produced.</p>
             <p>Retaining original file ({originalSize}).</p>
           </>
         )}

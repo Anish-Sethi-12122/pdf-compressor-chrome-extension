@@ -36,6 +36,9 @@ export function FileError({ message, reason, onChooseAnotherFile }: FileErrorPro
       <div className="dropzone-copy">
         <h2>{titleForReason(reason)}</h2>
         <p>{message}</p>
+        <p style={{ marginTop: '8px', fontSize: '11px', color: '#92939d' }}>
+          No changes were made. Your file never leaves this device.
+        </p>
       </div>
       <PrimaryButton onClick={onChooseAnotherFile} aria-label="Choose another PDF file">
         <Upload aria-hidden="true" size={16} strokeWidth={2.1} />

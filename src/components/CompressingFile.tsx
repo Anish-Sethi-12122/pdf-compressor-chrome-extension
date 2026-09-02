@@ -15,9 +15,12 @@ export function CompressingFile({ file }: CompressingFileProps) {
         <h2 title={file.name}>{file.name}</h2>
       </div>
       <div className="selected-file__inspecting">
-        <Loader2 className="spinner" aria-hidden="true" size={16} strokeWidth={2} />
-        Optimizing...
+        <Loader2 className="icon-spin" aria-hidden="true" size={16} strokeWidth={2} />
+        Optimizing locally...
       </div>
+      <p className="selected-file__local-note">
+        Processing directly on your device. Your file never leaves this browser.
+      </p>
     </div>
   )
 }

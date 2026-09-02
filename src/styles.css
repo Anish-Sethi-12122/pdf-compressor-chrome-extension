@@ -106,6 +106,7 @@ h1 { margin: 17px 0 0; color: #1c1e28; font-size: 28px; font-weight: 690; letter
 .selected-file__inspecting { display: inline-flex; align-items: center; gap: 7px; margin-top: 18px; color: #7473c9; font-size: 12px; font-weight: 600; line-height: 1.2; }
 
 .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(116, 115, 201, 0.25); border-top-color: #7473c9; border-radius: 50%; animation: spin 0.75s linear infinite; flex-shrink: 0; }
+.icon-spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .secondary-button, .text-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; border-radius: 9px; cursor: pointer; font-size: 12px; font-weight: 620; line-height: 1; outline: none; transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease; }
 .secondary-button { padding: 0 11px; border: 1px solid #dfdfe7; background: #fff; box-shadow: 0 2px 5px rgba(23, 25, 38, 0.03); color: #4f505a; }
