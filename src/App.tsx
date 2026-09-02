@@ -1,13 +1,11 @@
 import { Brand } from './components/Brand'
 import { UploadDropzone } from './components/UploadDropzone'
+import { BackgroundShapes } from './components/BackgroundShapes'
 
 export function App() {
   return (
     <main className="popup-shell">
-      <div className="bg-shape shape-1" aria-hidden="true" />
-      <div className="bg-shape shape-2" aria-hidden="true" />
-      <div className="bg-shape shape-3" aria-hidden="true" />
-      <div className="bg-shape shape-4" aria-hidden="true" />
+      <BackgroundShapes />
       
       <div className="content">
         <header className="intro">
