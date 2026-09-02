@@ -19,7 +19,7 @@ export function Brand() {
   return (
     <div className="brand">
       <BrandMark />
-      <span>[BRAND NAME]</span>
+      <span>PDF Compressor</span>
     </div>
   )
 }

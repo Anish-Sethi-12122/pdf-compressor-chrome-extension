@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "[BRAND NAME] PDF Compressor",
+  "name": "PDF Compressor",
   "short_name": "PDF Compressor",
   "description": "A focused, private PDF compression utility.",
   "version": "0.7.0",

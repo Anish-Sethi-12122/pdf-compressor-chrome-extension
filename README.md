@@ -1,4 +1,4 @@
-# [BRAND NAME] PDF Compressor
+# PDF Compressor
 
 A compact Chrome extension for private, client-side PDF processing. Supports local PDF selection, drag-and-drop, and structural lossless PDF compression using a Web Worker. No files leave the device.
 

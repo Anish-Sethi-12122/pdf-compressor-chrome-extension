@@ -5,6 +5,7 @@ export function App() {
   return (
     <main className="popup-shell">
       <div className="ambient-orb" aria-hidden="true" />
+      <div className="ambient-shape" aria-hidden="true" />
       <div className="content">
         <header className="intro">
           <Brand />
