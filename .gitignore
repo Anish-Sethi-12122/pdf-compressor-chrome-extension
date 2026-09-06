@@ -18,15 +18,22 @@ web_modules/
 .pnp.*
 
 # ------------------------------------------------------------------------------
-# 2. Build Outputs & Bundler Caches (Vite, Rollup, TypeScript)
+# 2. Build Outputs, Artifacts & Bundler Caches (Vite, Rollup, TypeScript)
 # ------------------------------------------------------------------------------
 dist/
+dist-*/
 dist-ssr/
 dist-zip/
 dist-extension/
 build/
 out/
+bin/
+obj/
+artifacts/
+package/
+pkg/
 release/
+releases/
 .vite/
 .rollup.cache/
 .parcel-cache/
@@ -35,7 +42,7 @@ release/
 *.tsbuildinfo
 
 # ------------------------------------------------------------------------------
-# 3. Chrome / Browser Extension Artifacts & Private Keys
+# 3. Chrome / Browser Extension Artifacts, Zips & Private Keys
 # ------------------------------------------------------------------------------
 # Extension packages and CRX manifests
 *.crx
@@ -44,10 +51,18 @@ release/
 *.key
 *.certificate
 
-# Packaged distribution zips (keep project root clean)
+# Packaged distribution archives and zip files
+*.zip
+.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
 /pdf-compressor-extension.zip
 /extension.zip
 /release-*.zip
+PDF_Compressor_*.zip
 
 # ------------------------------------------------------------------------------
 # 4. Environment Variables & Secret Configuration Files
