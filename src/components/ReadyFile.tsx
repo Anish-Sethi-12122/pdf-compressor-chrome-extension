@@ -35,7 +35,7 @@ export function ReadyFile({ file, inspection, onChangeFile, onRemoveFile, onComp
         <CheckCircle2 aria-hidden="true" size={15} strokeWidth={2} />
         Ready to compress
       </div>
-      <PrimaryButton onClick={onCompress} aria-label="Compress PDF">
+      <PrimaryButton onClick={onCompress} aria-label="Compress PDF" autoFocus>
         <Minimize2 aria-hidden="true" size={16} strokeWidth={2.1} />
         Compress PDF
       </PrimaryButton>

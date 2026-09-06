@@ -65,7 +65,7 @@ export function CompressedResult({ originalFile, result, onStartOver }: Compress
         className="selected-file__actions"
         style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
       >
-        <PrimaryButton onClick={handleDownload} aria-label="Download PDF">
+        <PrimaryButton onClick={handleDownload} aria-label="Download PDF" autoFocus>
           <Download aria-hidden="true" size={16} strokeWidth={2.1} />
           Download PDF
         </PrimaryButton>

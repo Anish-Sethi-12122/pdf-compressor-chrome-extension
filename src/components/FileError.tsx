@@ -40,7 +40,7 @@ export function FileError({ message, reason, onChooseAnotherFile }: FileErrorPro
           No changes were made. Your file never leaves this device.
         </p>
       </div>
-      <PrimaryButton onClick={onChooseAnotherFile} aria-label="Choose another PDF file">
+      <PrimaryButton onClick={onChooseAnotherFile} aria-label="Choose another PDF file" autoFocus>
         <Upload aria-hidden="true" size={16} strokeWidth={2.1} />
         Choose another file
       </PrimaryButton>

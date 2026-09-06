@@ -12,7 +12,12 @@ export function ModeSelector({ selectedMode, onChange, disabled }: ModeSelectorP
   const orderedModes: CompressionMode[] = ['balanced', 'low', 'high'];
 
   return (
-    <div className="mode-selector mb-4" role="radiogroup" aria-label="Compression mode">
+    <fieldset
+      className="mode-selector mb-4"
+      disabled={disabled}
+      aria-disabled={disabled}
+    >
+      <legend className="sr-only">Compression mode</legend>
       <div className="flex flex-col space-y-2">
         {orderedModes.map((mode) => {
           const profile = COMPRESSION_PROFILES[mode]
@@ -58,6 +63,6 @@ export function ModeSelector({ selectedMode, onChange, disabled }: ModeSelectorP
           )
         })}
       </div>
-    </div>
+    </fieldset>
   )
 }
