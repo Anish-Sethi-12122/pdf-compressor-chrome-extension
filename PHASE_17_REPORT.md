@@ -14,10 +14,10 @@
 
 ## C. Buy Me a Coffee
 - **UI implementation:** Added a "☕ Buy Me a Coffee" button below the attribution.
-- **Destination URL:** Unconfigured.
-- **Implementation Mechanism:** A plain native `<a>` tag styled as a button.
+- **Destination URL:** `https://buymeacoffee.com/anishsethi`.
+- **Implementation Mechanism:** A plain native `<a>` tag styled as a button with `target="_blank"` and `rel="noopener noreferrer"`.
 - **Why this approach:** A native link ensures no 3rd-party widgets, no extra network requests, and complies strictly with the privacy-first architecture requirement.
-- **Explicit Statement:** **The Buy Me a Coffee account URL was not available in the repository.** Following the instructions not to fabricate one, the destination remains unconfigured. The support CTA is rendered with an `aria-disabled="true"` attribute, an `onClick` that prevents default navigation, a `title="Support destination unconfigured"`, and disabled-state styling (grayscale).
+- **Configuration Update:** Originally, the Buy Me a Coffee account URL was not available in the repository and the button was left unconfigured. The user has since explicitly requested the activation of the URL `https://buymeacoffee.com/anishsethi`, which is now configured in `src/lib/constants.ts`.
 
 ## D. Accessibility
 - **Tab order:** Natural DOM order: Compression Mode → Upload Button / Dropzone → Action Buttons (Compress / Retry / Start over / Download) → Attribution Link ("Anish Sethi") → Buy Me a Coffee CTA.
@@ -42,15 +42,15 @@
 - **Phase 14 tests:** Passed. (`test-modes.mjs`)
 - **Phase 15 tests:** Passed. (`test-mode-ui.mjs`)
 - **Phase 16 accessibility tests:** Passed. (`test-accessibility.mjs`)
-- **New Phase 17 tests:** Passed. (`test-attribution.mjs` successfully verifies attribution text, link, and Buy Me a Coffee unconfigured state)
+- **New Phase 17 tests:** Passed. (`test-attribution.mjs` successfully verifies attribution text, link, and configured Buy Me a Coffee button properties)
 - **Lifecycle tests:** Passed. (In `test-hardening.mjs`)
 - **Production browser tests:** Passed. (Puppeteer loads the `dist` folder identically to Chrome production).
 
 ## G. Production Verification
-The production build was loaded and verified. The attribution is properly placed, the text matches exactly, the LinkedIn hyperlink works, the Buy Me a Coffee button displays correctly (in disabled/unconfigured state), and existing workflows are unbroken without overflow.
+The production build was loaded and verified. The attribution is properly placed, the text matches exactly, the LinkedIn hyperlink works, the Buy Me a Coffee button displays correctly in its active and colored state, and existing workflows are unbroken without overflow.
 
 ## H. Known Issues
-- **Missing/unknown Buy Me a Coffee destination:** The Buy Me a Coffee account URL is missing from the repository. The support CTA has been implemented safely but remains unconfigured and non-functional until a URL is provided.
+- **None.** The initially unconfigured Buy Me a Coffee destination has been resolved per user feedback.
 
 ## I. Phase Verdict
 **COMPLETE**

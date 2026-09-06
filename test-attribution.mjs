@@ -69,11 +69,14 @@ async function runAttributionTests() {
   const ctaHref = await page.evaluate(el => el.getAttribute('href'), supportCta);
   const isUnconfigured = await page.evaluate(el => el.classList.contains('support-cta--unconfigured'), supportCta);
   
-  // Since we know it's unconfigured in the repo
-  if (!isUnconfigured) {
-    throw new Error('Support CTA should be marked unconfigured when no URL is provided');
+  if (isUnconfigured) {
+    throw new Error('Support CTA should not be marked unconfigured since a URL was provided');
   }
-  console.log('Buy Me a Coffee CTA is correctly handling the unconfigured state');
+  
+  if (ctaHref !== 'https://buymeacoffee.com/anishsethi') {
+    throw new Error('Support CTA href is incorrect: ' + ctaHref);
+  }
+  console.log('Buy Me a Coffee CTA is correctly configured');
 
   // Tab order test
   console.log('Testing Tab Order');
