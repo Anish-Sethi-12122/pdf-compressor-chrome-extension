@@ -75,6 +75,7 @@ PDF_Compressor_*.zip
 .env.*.local
 *.env
 secrets.json
+src/lib/analytics/analyticsConfig.ts
 
 # ------------------------------------------------------------------------------
 # 5. Logs, Diagnostics & Process Files

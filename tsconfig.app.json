@@ -18,7 +18,8 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["chrome", "vite/client"]
   },
   "include": ["src"]
 }

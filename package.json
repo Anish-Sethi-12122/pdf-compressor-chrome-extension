@@ -19,6 +19,7 @@
     "tailwindcss": "latest"
   },
   "devDependencies": {
+    "@types/chrome": "^0.2.9",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "finalhandler": "^2.1.1",

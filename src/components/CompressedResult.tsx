@@ -2,6 +2,7 @@ import { Download, FileText, RotateCcw } from 'lucide-react'
 import { formatFileSize } from '../lib/pdfFile'
 import type { CompressionResult } from '../lib/compression/CompressionEngine'
 import { PrimaryButton } from './PrimaryButton'
+import { analytics } from '../lib/analytics/analytics'
 
 type CompressedResultProps = {
   originalFile: File
@@ -11,6 +12,9 @@ type CompressedResultProps = {
 
 export function CompressedResult({ originalFile, result, onStartOver }: CompressedResultProps) {
   const handleDownload = () => {
+    // Fire-and-forget analytics — must not affect download
+    analytics.downloadClicked()
+
     // Derive filename: original.pdf → original-compressed.pdf
     const originalName = originalFile.name
     const lastDot = originalName.lastIndexOf('.')

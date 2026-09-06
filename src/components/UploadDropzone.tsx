@@ -14,6 +14,7 @@ import { CompressingFile } from './CompressingFile'
 import { CompressedResult } from './CompressedResult'
 import { ModeSelector } from './ModeSelector'
 import { resolveCompressionMode, type CompressionMode } from '../lib/compression/compressionConfig'
+import { analytics } from '../lib/analytics/analytics'
 
 type AppState =
   | { stage: 'idle' }
@@ -76,11 +77,15 @@ export function UploadDropzone() {
 
     setState({ stage: 'inspecting', file })
 
+    // Fire-and-forget analytics — must not affect inspection
+    analytics.pdfSelected()
+
     inspectPdf(file).then((result) => {
       if (inspectionToken.current !== token) return
 
       if (result.ok) {
         setState({ stage: 'ready', file, inspection: result })
+        analytics.inspectionCompleted()
       } else {
         setState({ stage: 'error', message: result.message, reason: result.reason })
       }
@@ -93,6 +98,9 @@ export function UploadDropzone() {
     const { file, inspection } = state
     setState({ stage: 'compressing', file, inspection })
 
+    // Fire-and-forget — must not block compression
+    analytics.compressionStarted(compressionMode)
+
     try {
       const arrayBuffer = await file.arrayBuffer()
       const uint8Array = new Uint8Array(arrayBuffer)
@@ -101,12 +109,19 @@ export function UploadDropzone() {
 
       if (result.ok) {
         setState({ stage: 'compressed', file, inspection, result })
+        if (result.changed) {
+          analytics.compressionCompleted(compressionMode)
+        } else {
+          analytics.compressionSkipped(compressionMode)
+        }
       } else {
         setState({ stage: 'compressionError', file, inspection, message: result.message })
+        analytics.compressionFailed(compressionMode, 'worker_error')
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.'
       setState({ stage: 'compressionError', file, inspection, message })
+      analytics.compressionFailed(compressionMode, 'unknown')
     }
   }
 

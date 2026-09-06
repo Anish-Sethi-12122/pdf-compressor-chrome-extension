@@ -70,10 +70,15 @@ The extension requires `wasm-unsafe-eval` CSP for execution but requests **0 per
 
 ### Privacy
 
-The PDF never leaves the device:
+PDF processing occurs entirely on the local device:
+- **No PDF uploads:** The PDF never leaves the device.
+- **Local PDF processing:** No external processing services are contacted.
+- **No file content storage:** No file content is stored persistently.
+- **No remote scripts:** The extension loads no remote JavaScript at runtime (WASM bundle is local).
 
-- No `fetch()` calls contain file data
-- No external processing services are contacted
-- No analytics payloads include file information
-- No file content is stored persistently
-- No remote scripts are loaded (WASM bundle is local)
+**Analytics:**
+- Analytics are only activated when the user explicitly grants consent.
+- When consented, minimal usage events (e.g. `compression_started`) are sent via `fetch()` to Google Analytics (`https://www.google-analytics.com`).
+- Analytics events are strictly limited to defined product lifecycle actions.
+- No analytics payloads include file information, PDF bytes, or document metadata.
+- *Note:* Because this is a client-side extension using the Measurement Protocol, the API secret is present in the distributed package and is not confidential. It should be treated as a rotatable identifier for the destination property.
