@@ -219,7 +219,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
               result.outputHeight,
             );
             imagesModified++;
-            console.log(
+            console.debug(
               `[QpdfEngine] Replaced obj ${candidate.objectId}: ` +
               `bytes: ${(result.originalBytes / 1024).toFixed(1)}KB → ${(result.candidateBytes / 1024).toFixed(1)}KB | ` +
               `dim: ${result.originalWidth}x${result.originalHeight} → ${result.outputWidth}x${result.outputHeight} | ` +
@@ -231,7 +231,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
           }
         } else {
           imagesSkipped++;
-          console.log(`[QpdfEngine] Skipped obj ${candidate.objectId}: ${result.reason}`);
+          console.debug(`[QpdfEngine] Skipped obj ${candidate.objectId}: ${result.reason}`);
         }
       }
     } else {

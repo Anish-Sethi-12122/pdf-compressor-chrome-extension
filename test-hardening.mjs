@@ -14,7 +14,7 @@ const fixtures = [
   { name: 'large-image.pdf', expected: 'success' },
   { name: 'phase7-png-only.pdf', expected: 'unchanged' },
   { name: 'hardening-unsupported-images.pdf', expected: 'unchanged' },
-  { name: 'hardening-forms-links-bookmarks.pdf', expected: 'unchanged' },
+  { name: 'hardening-forms-links-bookmarks.pdf', expected: 'success' },
   { name: 'phase7-shared-image.pdf', expected: 'unchanged' },
   { name: 'phase7-mixed-content.pdf', expected: 'unchanged' },
 ];
@@ -66,27 +66,41 @@ async function runHardeningTests() {
     const fileInput = await page.$('input[type=file]');
     await fileInput.uploadFile(pdfPath);
     
-    // Wait for file ready or error
+    // Wait for UI to stabilize after upload
     try {
         await page.waitForFunction(() => {
             const text = document.body.innerText.toLowerCase();
-            return document.querySelector('.selected-file__ready') !== null || text.includes('error') || text.includes('failed');
+            return document.querySelector('.selected-file__ready') !== null || 
+                   document.querySelector('.file-error') !== null ||
+                   text.includes('error') || text.includes('failed') || text.includes('password-protected') || 
+                   text.includes('damaged') || text.includes('doesn\'t look like') || text.includes('could not read');
         }, { timeout: 5000 });
     } catch(e) {}
 
-    const isErrorUI = await page.evaluate(() => {
+    const uploadState = await page.evaluate(() => {
         const text = document.body.innerText.toLowerCase();
-        return text.includes('error') || text.includes('failed') || text.includes('corrupt') || text.includes('encrypted');
+        if (text.includes("doesn't look like a pdf")) return 'rejected_upload';
+        if (text.includes('password-protected') || text.includes('damaged') || text.includes('could not read') || document.querySelector('.file-error')) return 'inspection_failed';
+        if (document.querySelector('.selected-file__ready')) return 'ready';
+        return 'unexpected_state';
     });
 
-    if (isErrorUI) {
+    if (uploadState === 'rejected_upload') {
         console.log(`[${fixture.name}] -> Rejected at upload stage (Expected: ${fixture.expected})`);
+        continue;
+    }
+    if (uploadState === 'inspection_failed') {
+        console.log(`[${fixture.name}] -> Inspection failed (Expected: ${fixture.expected})`);
+        continue;
+    }
+    if (uploadState === 'unexpected_state') {
+        console.log(`[${fixture.name}] -> Unexpected UI state after upload (Expected: ${fixture.expected})`);
         continue;
     }
     
     const compressBtn = await page.$('button[aria-label="Compress PDF"]');
     if (!compressBtn) {
-        console.log(`[${fixture.name}] -> No compress button? (Expected: ${fixture.expected})`);
+        console.log(`[${fixture.name}] -> Compression unavailable? (Expected: ${fixture.expected})`);
         continue;
     }
     await compressBtn.click();
@@ -94,7 +108,7 @@ async function runHardeningTests() {
     try {
       await page.waitForFunction(() => {
         const text = document.body.innerText.toLowerCase();
-        return text.includes('pdf compressed') || text.includes('no meaningful savings') || text.includes('went wrong') || text.includes('error');
+        return text.includes('pdf compressed') || text.includes('no meaningful savings') || text.includes('went wrong') || text.includes('error') || document.querySelector('.compression-error');
       }, { timeout: 30000 });
       
       const text = await page.evaluate(() => document.body.innerText.toLowerCase());
@@ -102,8 +116,10 @@ async function runHardeningTests() {
           console.log(`[${fixture.name}] -> SUCCESS (Expected: ${fixture.expected})`);
       } else if (text.includes('no meaningful savings')) {
           console.log(`[${fixture.name}] -> UNCHANGED (Expected: ${fixture.expected})`);
+      } else if (text.includes('went wrong') || text.includes('error') || text.includes('failed')) {
+          console.log(`[${fixture.name}] -> COMPRESSION FAILED (Expected: ${fixture.expected})`);
       } else {
-          console.log(`[${fixture.name}] -> ERROR (Expected: ${fixture.expected})`);
+          console.log(`[${fixture.name}] -> UNEXPECTED POST-COMPRESSION STATE`);
       }
     } catch(e) {
       console.log(`[${fixture.name}] -> TIMEOUT OR FAILURE`);

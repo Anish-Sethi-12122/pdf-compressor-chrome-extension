@@ -1,6 +1,6 @@
 # PDF Compressor
 
-A compact Chrome extension for private, client-side PDF processing. Supports local PDF selection, drag-and-drop, and structural lossless PDF compression using a Web Worker. No files leave the device.
+A compact Chrome extension for private, client-side PDF processing. Supports local PDF selection, drag-and-drop, and a hybrid compression engine using a Web Worker. No files leave the device.
 
 ## Requirements
 
@@ -46,10 +46,10 @@ The extension requires `wasm-unsafe-eval` CSP for execution but requests **0 per
 
 ### Role in this project
 
-- **qpdf-wasm**: Custom compiled WASM module for both **lossless structural optimization** and **image stream extraction/replacement**. It runs in a dedicated Web Worker to linearize, optimize streams, and replace large images with re-encoded JPEGs.
+- **qpdf-wasm**: Custom compiled WASM module for both **lossless structural optimization** and **image stream extraction/replacement**. It runs in a dedicated Web Worker to linearize, optimize streams, and replace eligible large images with re-encoded lossy JPEGs.
 - **pdf-lib**: Used for **PDF inspection** (page count, validity check) before and after compression.
 
-**Important Note on Original-File Passthrough:** If the engine's optimization does not yield a meaningfully smaller file, the extension automatically retains and returns the original file unaltered.
+**Important Note on Original-File Fallback:** If the engine's optimization does not yield a meaningfully smaller file, or if output validation fails, the extension automatically retains and returns the original file unaltered.
 
 ### Current capabilities
 
@@ -57,9 +57,9 @@ The extension requires `wasm-unsafe-eval` CSP for execution but requests **0 per
 |---|---|
 | Parse validity check | ✅ |
 | Page count | ✅ |
-| Lossless structural compression | ✅ |
+| Lossless structural optimization | ✅ |
+| Lossy JPEG recompression | ✅ (Balanced preset) |
 | Web Worker offloading | ✅ |
-| Image resampling / re-encoding | ✅ (Balanced preset) |
 | Output generation & Download | ✅ |
 
 ### Known limitations

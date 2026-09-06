@@ -5,6 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
+  // REQUIRED for Chrome extension: Vite defaults to base='/' which produces
+  // absolute /assets/... paths in index.html.  Absolute paths resolve against
+  // the server origin, which does not exist in a chrome-extension:// context.
+  // Empty-string base makes every emitted path relative (./assets/...) so the
+  // popup HTML works correctly when loaded from chrome-extension://[id]/index.html
+  base: '',
+
   // Treat .wasm files as static assets so Vite emits them with stable URLs
   // and the ?url import syntax works inside the Web Worker.
   assetsInclude: ['**/*.wasm'],
