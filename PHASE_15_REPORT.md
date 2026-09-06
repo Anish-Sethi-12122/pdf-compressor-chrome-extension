@@ -5,12 +5,12 @@
 - **`src/components/ModeSelector.tsx`**: Created a new UI component (`ModeSelector`) that renders a list of radio buttons for the user to select the compression mode. It loops through `COMPRESSION_PROFILES` to render the options dynamically while maintaining semantic order (Balanced, Low, High).
 - **`src/components/UploadDropzone.tsx`**: 
   - Imported `ModeSelector` and `resolveCompressionMode`.
-  - Added state for `compressionMode` with defensive initialization from `localStorage`.
+  - Added state for `compressionMode` initialized safely to `Balanced`.
   - Passed the `compressionMode` to `ModeSelector` and to `CompressionClient.compress` via `options.mode`.
-  - Persisted user preference on mode change.
+  - Mode is intentionally reset to `Balanced` every time the extension is opened/reloaded per final user clarification.
   - Disabled `ModeSelector` while `state.stage === 'compressing'` or `inspecting` to prevent in-flight mutation of the mode.
 - **`src/lib/compression/CompressionEngine.ts`** & **`src/lib/compression/compressionConfig.ts`**: Utilized existing centralized mode configuration (`COMPRESSION_PROFILES` and `resolveCompressionMode`) as the single source of truth.
-- **`test-mode-ui.mjs`**: Added a new Puppeteer test suite to verify UI interactions, mode persistence, invalid fallback, and compression lifecycle state preservation.
+- **`test-mode-ui.mjs`**: Added a new Puppeteer test suite to verify UI interactions, reset on reload, and compression lifecycle state preservation.
 
 ## B. UI
 
@@ -28,11 +28,9 @@ The mode is stored completely independently of the file state (which progresses 
 
 ## D. Persistence
 
-- **Storage mechanism**: `localStorage`
-- **Stored key**: `compressionMode`
-- **Stored values**: Strings (`'low'`, `'balanced'`, `'high'`)
-- **Validation behavior**: Uses `resolveCompressionMode` which strictly checks if the value is one of the three valid strings.
-- **Fallback behavior**: Unrecognized, corrupted, or missing values safely fall back to the default (`'balanced'`).
+Based on updated requirements, the popup acts ephemerally:
+- **Default state**: Always resets to `Balanced` upon opening the extension popup.
+- **Session state**: Remembers your explicitly selected mode across file replacements, errors, and retries as long as the popup remains open.
 
 No PDF data or file metadata is persisted.
 

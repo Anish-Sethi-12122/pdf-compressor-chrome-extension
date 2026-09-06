@@ -50,7 +50,7 @@ async function runModeUITests() {
   console.log(`Test Default Mode: expected 'balanced', got '${selectedMode}'`);
   if (selectedMode !== 'balanced') throw new Error('Default mode is not balanced');
 
-  // Test 2: Select Low and check persistence
+  // Test 2: Select Low, reload, verify it resets to Balanced
   await page.click('input[value="low"]');
   await page.goto(popupUrl);
   await page.waitForSelector('input[name="compressionMode"]');
@@ -58,19 +58,10 @@ async function runModeUITests() {
     const checked = document.querySelector('input[name="compressionMode"]:checked');
     return checked ? checked.value : null;
   });
-  console.log(`Test Persistence (Low): expected 'low', got '${selectedMode}'`);
-  if (selectedMode !== 'low') throw new Error('Persistence failed for low');
+  console.log(`Test Reset on Reload: expected 'balanced', got '${selectedMode}'`);
+  if (selectedMode !== 'balanced') throw new Error('Mode did not reset to balanced on reload');
 
-  // Test 3: Invalid persistence fallback
-  await page.evaluate(() => localStorage.setItem('compressionMode', 'super-high-invalid'));
-  await page.goto(popupUrl);
-  await page.waitForSelector('input[name="compressionMode"]');
-  selectedMode = await page.evaluate(() => {
-    const checked = document.querySelector('input[name="compressionMode"]:checked');
-    return checked ? checked.value : null;
-  });
-  console.log(`Test Invalid Persistence Fallback: expected 'balanced', got '${selectedMode}'`);
-  if (selectedMode !== 'balanced') throw new Error('Fallback for invalid persistence failed');
+  // Test 3 removed (no local storage fallback to test anymore)
 
   // Test 4: File replacement and Compression Lifecycle
   // Reset to high

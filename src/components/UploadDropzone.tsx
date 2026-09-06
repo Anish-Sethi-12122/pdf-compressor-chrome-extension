@@ -35,20 +35,11 @@ export function UploadDropzone() {
   const dragDepth = useRef(0)
   
   const [compressionMode, setCompressionMode] = useState<CompressionMode>(() => {
-    try {
-      return resolveCompressionMode(localStorage.getItem('compressionMode'));
-    } catch {
-      return resolveCompressionMode(null);
-    }
+    return resolveCompressionMode(null);
   });
 
   const handleModeChange = (mode: CompressionMode) => {
     setCompressionMode(mode);
-    try {
-      localStorage.setItem('compressionMode', mode);
-    } catch {
-      // ignore
-    }
   };
 
   // Compression client instance
