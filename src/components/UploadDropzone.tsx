@@ -12,6 +12,8 @@ import { PrimaryButton } from './PrimaryButton'
 import { ReadyFile } from './ReadyFile'
 import { CompressingFile } from './CompressingFile'
 import { CompressedResult } from './CompressedResult'
+import { ModeSelector } from './ModeSelector'
+import { resolveCompressionMode, type CompressionMode } from '../lib/compression/compressionConfig'
 
 type AppState =
   | { stage: 'idle' }
@@ -32,6 +34,23 @@ export function UploadDropzone() {
   const inputRef = useRef<HTMLInputElement>(null)
   const dragDepth = useRef(0)
   
+  const [compressionMode, setCompressionMode] = useState<CompressionMode>(() => {
+    try {
+      return resolveCompressionMode(localStorage.getItem('compressionMode'));
+    } catch {
+      return resolveCompressionMode(null);
+    }
+  });
+
+  const handleModeChange = (mode: CompressionMode) => {
+    setCompressionMode(mode);
+    try {
+      localStorage.setItem('compressionMode', mode);
+    } catch {
+      // ignore
+    }
+  };
+
   // Compression client instance
   const clientRef = useRef<CompressionClient | null>(null)
 
@@ -87,7 +106,7 @@ export function UploadDropzone() {
       const arrayBuffer = await file.arrayBuffer()
       const uint8Array = new Uint8Array(arrayBuffer)
 
-      const result = await clientRef.current!.compress(uint8Array, { preset: 'balanced' })
+      const result = await clientRef.current!.compress(uint8Array, { mode: compressionMode })
 
       if (result.ok) {
         setState({ stage: 'compressed', file, inspection, result })
@@ -252,24 +271,33 @@ export function UploadDropzone() {
   }
 
   return (
-    <section
-      className={`upload-dropzone ${isDragging ? 'upload-dropzone--dragging' : ''}`}
-      aria-describedby={state.stage === 'idle' ? 'upload-guidance' : undefined}
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <input
-        ref={inputRef}
-        className="file-input"
-        type="file"
-        accept="application/pdf,.pdf"
-        onChange={handleFileChange}
-        aria-label="Choose a PDF file"
-      />
+    <>
+      <div className="w-full mt-4">
+        <ModeSelector
+          selectedMode={compressionMode}
+          onChange={handleModeChange}
+          disabled={state.stage === 'compressing' || state.stage === 'inspecting'}
+        />
+      </div>
+      <section
+        className={`upload-dropzone ${isDragging ? 'upload-dropzone--dragging' : ''}`}
+        aria-describedby={state.stage === 'idle' ? 'upload-guidance' : undefined}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <input
+          ref={inputRef}
+          className="file-input"
+          type="file"
+          accept="application/pdf,.pdf"
+          onChange={handleFileChange}
+          aria-label="Choose a PDF file"
+        />
 
-      {renderContent()}
-    </section>
+        {renderContent()}
+      </section>
+    </>
   )
 }
