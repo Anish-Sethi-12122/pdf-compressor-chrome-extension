@@ -52,11 +52,21 @@ export const REPLACEMENT_THRESHOLD = 0.10;
  *
  * @param jpegBytes - The raw JPEG-encoded bytes extracted from the PDF stream.
  * @param candidate - Classification metadata (dimensions, color space, etc.).
+ * @param config - Processing parameters (quality, thresholds, etc.).
  * @returns ImageProcessingResult — accepted with new JPEG bytes, or rejected.
  */
 export async function processImage(
   jpegBytes: Uint8Array,
   candidate: ImageCandidate,
+  config: {
+    jpegQuality: number;
+    maxImageDimension: number;
+    replacementThreshold: number;
+  } = {
+    jpegQuality: JPEG_QUALITY,
+    maxImageDimension: DOWNSAMPLE_MAX_PX,
+    replacementThreshold: REPLACEMENT_THRESHOLD,
+  }
 ): Promise<ImageProcessingResult> {
   const objectId = candidate.objectId;
   const generation = candidate.generation;
@@ -97,8 +107,8 @@ export async function processImage(
     let resized = false;
 
     const longestEdge = Math.max(srcW, srcH);
-    if (longestEdge > DOWNSAMPLE_MAX_PX) {
-      const scale = DOWNSAMPLE_MAX_PX / longestEdge;
+    if (longestEdge > config.maxImageDimension) {
+      const scale = config.maxImageDimension / longestEdge;
       outW = Math.round(srcW * scale);
       outH = Math.round(srcH * scale);
       // Ensure at least 1×1
@@ -137,7 +147,7 @@ export async function processImage(
     try {
       candidateBlob = await canvas.convertToBlob({
         type: 'image/jpeg',
-        quality: JPEG_QUALITY,
+        quality: config.jpegQuality,
       });
     } catch {
       return { accepted: false, objectId, generation, reason: 'encode_failed' };
@@ -148,7 +158,7 @@ export async function processImage(
     // -----------------------------------------------------------------------
     // Step 5 — Accept or reject based on size threshold
     // -----------------------------------------------------------------------
-    const threshold = originalBytes * (1 - REPLACEMENT_THRESHOLD);
+    const threshold = originalBytes * (1 - config.replacementThreshold);
     if (candidateBytes >= threshold) {
       // Not materially smaller — keep original to avoid generational loss.
       console.debug(`[imageProcessor] Skipped obj ${objectId}: new ${candidateBytes} >= threshold ${threshold} (orig ${originalBytes})`);
@@ -169,7 +179,7 @@ export async function processImage(
       originalHeight,
       outputWidth: outW,
       outputHeight: outH,
-      quality: JPEG_QUALITY,
+      quality: config.jpegQuality,
       resized,
       jpegData,
     };

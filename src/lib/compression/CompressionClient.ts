@@ -49,7 +49,7 @@ export class CompressionClient {
 
   public async compress(
     input: Uint8Array,
-    options: CompressionOptions = { preset: 'balanced' },
+    options: CompressionOptions = { mode: 'balanced' },
   ): Promise<CompressionResult> {
     return new Promise((resolve, reject) => {
       if (!this.worker) {

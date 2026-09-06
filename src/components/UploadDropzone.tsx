@@ -36,8 +36,11 @@ export function UploadDropzone() {
   const clientRef = useRef<CompressionClient | null>(null)
 
   useEffect(() => {
-    // Initialize compression client on mount
+    // Initialise worker immediately so it's warm
     clientRef.current = new CompressionClient()
+    // @ts-ignore - Expose for test suite
+    window.__TEST_COMPRESSION_CLIENT = clientRef.current;
+    
     return () => {
       clientRef.current?.terminate()
     }

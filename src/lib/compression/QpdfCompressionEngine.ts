@@ -55,13 +55,19 @@ async function getQpdfModule(): Promise<any> {
   return modulePromise;
 }
 
+import { COMPRESSION_PROFILES, resolveCompressionMode } from './compressionConfig';
+
 // ---------------------------------------------------------------------------
 // Engine
 // ---------------------------------------------------------------------------
 
 export class QpdfCompressionEngine implements CompressionEngine {
-  async compress(input: Uint8Array, _options?: CompressionOptions): Promise<CompressionResult> {
+  async compress(input: Uint8Array, options?: CompressionOptions): Promise<CompressionResult> {
     const t0 = performance.now();
+    
+    // Resolve mode from options
+    const mode = resolveCompressionMode(options?.mode ?? options?.preset);
+    const profile = COMPRESSION_PROFILES[mode];
 
     // -----------------------------------------------------------------------
     // Step 0 — Basic input validation
@@ -164,7 +170,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
     // -----------------------------------------------------------------------
     // Step 5 — Classify image candidates
     // -----------------------------------------------------------------------
-    const { candidates, skipped } = selectCandidates(rawImages);
+    const { candidates, skipped } = selectCandidates(rawImages, profile.minEligibleStreamSize);
 
     const imagesDetected = rawImages.length;
     let imagesModified = 0;
@@ -201,7 +207,11 @@ export class QpdfCompressionEngine implements CompressionEngine {
         // Process (decode → optional resize → JPEG encode → compare)
         let result;
         try {
-          result = await processImage(jpegBytes, candidate);
+          result = await processImage(jpegBytes, candidate, {
+            jpegQuality: profile.jpegQuality,
+            maxImageDimension: profile.maxImageDimension,
+            replacementThreshold: profile.replacementThreshold,
+          });
         } catch (err: unknown) {
           console.warn(`[QpdfEngine] Image processing error on obj ${candidate.objectId}:`, err);
           imagesSkipped++;

@@ -30,7 +30,7 @@ self.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
   const req = event.data;
 
   if (req.type === 'compress') {
-    const options: CompressionOptions = req.options ?? { preset: 'balanced' };
+    const options: CompressionOptions = req.options ?? { mode: 'balanced' };
 
     try {
       const inputArr = new Uint8Array(req.input);

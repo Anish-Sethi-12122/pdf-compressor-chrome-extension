@@ -49,7 +49,7 @@ const SUPPORTED_BPC = new Set([8]);
  * Classify a single image XObject.
  * Returns either an eligible candidate or a skipped record with a reason.
  */
-export function classifyImage(meta: ImageMetadata): ClassifiedImage {
+export function classifyImage(meta: ImageMetadata, minStreamBytes: number = MIN_STREAM_BYTES): ClassifiedImage {
   // Must have sane dimensions
   if (meta.width === 0 || meta.height === 0) {
     return { ...meta, eligible: false, reason: 'zero_dimensions' };
@@ -82,7 +82,7 @@ export function classifyImage(meta: ImageMetadata): ClassifiedImage {
   }
 
   // Skip tiny images — generational loss outweighs any gain.
-  if (meta.streamLength < MIN_STREAM_BYTES) {
+  if (meta.streamLength < minStreamBytes) {
     return { ...meta, eligible: false, reason: 'too_small' };
   }
 
@@ -93,7 +93,7 @@ export function classifyImage(meta: ImageMetadata): ClassifiedImage {
  * Filter an array of image metadata to only eligible candidates.
  * Deduplicates by objectId so shared XObjects are processed exactly once.
  */
-export function selectCandidates(images: ImageMetadata[]): {
+export function selectCandidates(images: ImageMetadata[], minStreamBytes: number = MIN_STREAM_BYTES): {
   candidates: Array<ImageMetadata & { eligible: true }>;
   skipped: Array<ImageMetadata & { eligible: false; reason: string }>;
 } {
@@ -106,7 +106,7 @@ export function selectCandidates(images: ImageMetadata[]): {
     if (seen.has(img.objectId)) continue;
     seen.add(img.objectId);
 
-    const result = classifyImage(img);
+    const result = classifyImage(img, minStreamBytes);
     if (result.eligible) {
       candidates.push(result as ImageMetadata & { eligible: true });
     } else {
@@ -116,3 +116,4 @@ export function selectCandidates(images: ImageMetadata[]): {
 
   return { candidates, skipped };
 }
+

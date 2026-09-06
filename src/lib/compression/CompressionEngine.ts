@@ -9,11 +9,12 @@
 // Options
 // ---------------------------------------------------------------------------
 
-/** Currently only 'balanced'. Additional presets are reserved for future phases. */
-export type CompressionPreset = 'balanced';
+import type { CompressionMode } from './compressionConfig';
 
 export type CompressionOptions = {
-  preset: CompressionPreset;
+  mode?: CompressionMode;
+  /** Legacy preset support. Use mode instead. */
+  preset?: string;
 };
 
 // ---------------------------------------------------------------------------
