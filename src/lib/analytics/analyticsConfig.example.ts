@@ -34,7 +34,7 @@ export const GA_ENDPOINT = 'https://www.google-analytics.com/mp/collect';
  *
  * Replace with your real Measurement ID to activate analytics.
  */
-export const MEASUREMENT_ID = 'G-GMSYMN1H6B';
+export const MEASUREMENT_ID = 'G-XXXXXXXXXX';
 
 /**
  * GA4 Measurement Protocol API secret.

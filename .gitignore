@@ -231,3 +231,5 @@ qpdf_wrapper.wasm
 !public/qpdf_wrapper.wasm
 benchmark_results.json
 
+
+downloads/
