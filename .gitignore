@@ -225,11 +225,19 @@ test*.pdf
 test*.jpg
 test*.png
 output*.pdf
-qpdf_wrapper.js
-qpdf_wrapper.wasm
+!qpdf_wrapper.js
+!qpdf_wrapper.wasm
 !public/qpdf_wrapper.js
 !public/qpdf_wrapper.wasm
 benchmark_results.json
 
 
 downloads/
+Store Listing/
+benchmark/results/*.pdf
+benchmark/results/*.json
+capture_*.mjs
+generate_*.mjs
+marketing.html
+resize_icons.py
+update_readme*.py

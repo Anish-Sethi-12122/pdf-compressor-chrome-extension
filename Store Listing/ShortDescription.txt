@@ -1,1 +1,0 @@
-A focused, private PDF compression utility that shrinks files 100% locally on your device. Fast, secure, and no uploads required.

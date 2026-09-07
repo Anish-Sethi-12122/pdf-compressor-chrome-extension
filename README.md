@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Store Listing/Icons/icon-128.png" alt="PDF Compressor Logo" width="128" />
+  <img src="https://raw.githubusercontent.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/2aa5c60213f39809378906a2744abbadd6c49c91/Store%20Listing/PromoTile_Marquee_1400x560.png" alt="PDF Compressor Promo" width="100%" />
   
   # PDF Compressor
   
@@ -18,7 +18,7 @@
 
 ---
 
-## 🌟 Why PDF Compressor?
+## 🚀 Why PDF Compressor?
 
 Most PDF compression tools require you to upload your sensitive documents to a remote server. **PDF Compressor is different.** 
 
@@ -27,15 +27,46 @@ Using a highly-optimized WebAssembly engine, it processes your files entirely lo
 - **🔒 100% Private**: Your files never leave your device.
 - **⚡ Lightning Fast**: Desktop-grade compression speeds in the browser.
 - **🛡️ Zero Permissions**: Requests exactly `0` permissions in its manifest.
-- **🎯 Smart Validation**: Automatically ensures the compressed PDF is structurally valid and actually smaller.
+- **✅ Smart Validation**: Automatically ensures the compressed PDF is structurally valid and actually smaller.
 
-## 📸 Screenshots
+## 📥 Installation
 
-| Uploading | Compression Complete |
+### Option 1: Install via Chrome Web Store (Recommended)
+
+The easiest and most secure way to install PDF Compressor is directly through the official Google Chrome Web Store. 
+
+1. Visit the [PDF Compressor Chrome Web Store Page](#) *(Note: Link will be live once the store review is complete)*.
+2. Click **"Add to Chrome"**.
+3. Pin the extension to your toolbar for easy access!
+
+### Option 2: Manual Installation (Developer Mode)
+
+If you prefer to load the extension manually from a downloaded release:
+
+1. Download the latest `PDF_Compressor_Release_v1.0.0.zip` from the [Releases page](https://github.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/releases).
+2. Extract the ZIP file to a folder on your computer.
+3. Open Chrome and navigate to `chrome://extensions`.
+4. Turn on **Developer mode** in the top right corner.
+5. Click **Load unpacked** and select the folder where you extracted the ZIP.
+
+## 📸 In Action
+
+### Marketing Assets
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/2aa5c60213f39809378906a2744abbadd6c49c91/Store%20Listing/Screenshots/Marketing_1.png" width="48%" />
+  <img src="https://raw.githubusercontent.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/2aa5c60213f39809378906a2744abbadd6c49c91/Store%20Listing/Screenshots/Marketing_2.png" width="48%" />
+  <img src="https://raw.githubusercontent.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/2aa5c60213f39809378906a2744abbadd6c49c91/Store%20Listing/Screenshots/Marketing_4.png" width="48%" />
+  <img src="https://raw.githubusercontent.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/2aa5c60213f39809378906a2744abbadd6c49c91/Store%20Listing/Screenshots/Marketing_5.png" width="48%" />
+</div>
+
+### Extension UI
+
+| Initial Upload | Compression Complete |
 | :---: | :---: |
-| <img src="Store Listing/Screenshots/1_Initial.png" width="400" /> | <img src="Store Listing/Screenshots/2_Completed.png" width="400" /> |
+| <img src="https://raw.githubusercontent.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/0a4e2a3/Store%20Listing/Screenshots/1_Initial.png" width="400" /> | <img src="https://raw.githubusercontent.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/0a4e2a3/Store%20Listing/Screenshots/2_Completed.png" width="400" /> |
 
-## 🚀 Features
+
+## 🎛️ Features
 
 *   **Three Compression Modes:**
     *   **Balanced (Default):** The optimal mix of size reduction and visual clarity (JPEG quality 0.82, downsampled to 2400px longest edge).
@@ -45,7 +76,7 @@ Using a highly-optimized WebAssembly engine, it processes your files entirely lo
 *   **Original File Fallback:** If compression isn't worthwhile or the output is invalid, the original file is safely retained.
 *   **Accessibility First:** Fully navigable via keyboard (`Tab` / `Shift+Tab`) with correct ARIA live regions for screen readers.
 
-## 🛠️ Architecture
+## 🏗️ Architecture
 
 **Core Libraries:**
 *   **Custom qpdf WebAssembly (`qpdf_wrapper.wasm`)**: Compiled specifically for this project. Performs structural optimization, linearization, and stream extraction/replacement.
@@ -65,6 +96,8 @@ Using a highly-optimized WebAssembly engine, it processes your files entirely lo
 
 1.  **Clone & Install**
     ```bash
+    git clone https://github.com/Anish-Sethi-12122/pdf-compressor-chrome-extension.git
+    cd pdf-compressor-chrome-extension
     npm install
     ```
 2.  **Start Development Server** (for UI development)
@@ -76,12 +109,6 @@ Using a highly-optimized WebAssembly engine, it processes your files entirely lo
     npm run build
     ```
     *The Chrome-ready unpacked extension will be generated in the `dist/` directory.*
-
-### Loading in Chrome
-1. Navigate to `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Select **Load unpacked**.
-4. Choose the `dist` directory.
 
 > **Note:** The extension requires the `wasm-unsafe-eval` CSP directive for the WebWorker to execute the qpdf WASM module, but it requests **0 permissions** from the browser.
 
@@ -115,11 +142,11 @@ To configure analytics for development or forks:
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to help out.
 
-## 🛡️ Security
+## 🔒 Security
 
 Please read our [SECURITY.md](SECURITY.md) for security policies and vulnerability reporting guidelines.
 
-## 💖 Support the Project
+## ❤️ Support the Project
 
 If this extension saved you time, storage, or just made your life a little easier, please consider supporting its ongoing development!
 

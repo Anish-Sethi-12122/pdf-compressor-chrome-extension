@@ -3,9 +3,10 @@
 ## Supported Versions
 Only the latest released version of the PDF Compressor extension is actively supported for security updates. 
 
-## Reporting a Vulnerability
-If you discover a security vulnerability, please do NOT report it in the public issue tracker.
-Please email the project owner/maintainer directly with a detailed description of the vulnerability and steps to reproduce it.
+## Reporting Issues & Vulnerabilities
+We highly encourage you to use this extension extensively! Because this extension operates 100% locally on your machine with zero server communication, the typical risks of data leaks are nonexistent. 
+
+If you discover a bug, unexpected behavior, or even a security vulnerability, **please report it directly in the public GitHub Issues tab** rather than emailing the maintainer privately. We believe in building in public, and transparently tracking issues helps everyone in the community.
 
 ## Security Architecture Overview
 This extension is designed with a strict "local-first" privacy and security model:
