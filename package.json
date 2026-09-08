@@ -10,10 +10,13 @@
     "generate-fixtures": "node test-fixtures/generate-phase7-fixtures.mjs"
   },
   "dependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "latest",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
     "pdf-lib": "^1.17.1",
+    "playwright": "^1.63.0",
+    "puppeteer-screen-recorder": "^3.0.6",
     "react": "latest",
     "react-dom": "latest",
     "tailwindcss": "latest"

@@ -35,7 +35,7 @@ Using a highly-optimized WebAssembly engine, it processes your files entirely lo
 
 The easiest and most secure way to install PDF Compressor is directly through the official Google Chrome Web Store. 
 
-1. Visit the [PDF Compressor Chrome Web Store Page](#) *(Note: Link will be live once the store review is complete)*.
+1. Visit the public listing of [PDF Compressor on Chrome Web Store](https://chromewebstore.google.com/detail/pdf-compressor/mpgmhonjnchjjgbofkjkghmgmnpkfomn)
 2. Click **"Add to Chrome"**.
 3. Pin the extension to your toolbar for easy access!
 
