@@ -72,6 +72,7 @@ If you prefer to load the extension manually from a downloaded release:
     *   **Balanced (Default):** The optimal mix of size reduction and visual clarity (JPEG quality 0.82, downsampled to 2400px longest edge).
     *   **Low:** Minimal compression for excellent quality (JPEG quality 0.90, downsampled to 3000px longest edge).
     *   **High:** Aggressive compression for maximum space savings (JPEG quality 0.60, downsampled to 1600px longest edge).
+*   **Parallel Batch Processing:** Drop multiple PDFs at once. The extension intelligently utilizes bounded Web Workers based on your hardware concurrency to compress multiple files simultaneously while keeping memory footprints low.
 *   **Intelligent Replacement:** Extracts eligible large image streams, re-encodes them as lossy JPEGs, and replaces them while preserving native document structure.
 *   **Original File Fallback:** If compression isn't worthwhile or the output is invalid, the original file is safely retained.
 *   **Accessibility First:** Fully navigable via keyboard (`Tab` / `Shift+Tab`) with correct ARIA live regions for screen readers.
@@ -125,6 +126,7 @@ node test-hardening.mjs
 node test-analytics.mjs
 node test-attribution.mjs
 node test-ga4.mjs
+node test-batch.mjs
 ```
 
 *Note on Test/Benchmark Infrastructure: The repository intentionally retains test fixtures (`test_fixture.pdf`), historical benchmarking scripts (`benchmark.mjs`), and WASM compilation dependencies (e.g., `qpdf_wrapper.cpp`, `build_wasm.bat`). These are preserved for reproducibility and regression testing.*

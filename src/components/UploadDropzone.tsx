@@ -15,6 +15,7 @@ import { CompressedResult } from './CompressedResult'
 import { ModeSelector } from './ModeSelector'
 import { resolveCompressionMode, type CompressionMode } from '../lib/compression/compressionConfig'
 import { analytics } from '../lib/analytics/analytics'
+import { BatchDropzone } from './batch/BatchDropzone'
 
 type AppState =
   | { stage: 'idle' }
@@ -25,6 +26,7 @@ type AppState =
   | { stage: 'compressing'; file: File; inspection: Extract<PdfInspectionResult, { ok: true }> }
   | { stage: 'compressed'; file: File; inspection: Extract<PdfInspectionResult, { ok: true }>; result: Extract<CompressionResult, { ok: true }> }
   | { stage: 'compressionError'; file: File; inspection: Extract<PdfInspectionResult, { ok: true }>; message: string }
+  | { stage: 'batch'; batchFiles: File[] }
 
 function hasFiles(event: DragEvent<HTMLElement>): boolean {
   return Array.from(event.dataTransfer.types).includes('Files')
@@ -126,22 +128,21 @@ export function UploadDropzone() {
   }
 
   const acceptFiles = (files: File[]) => {
-    const selectedFile = files.find((f) => validatePdfFile(f).valid)
-
-    if (selectedFile) {
-      beginInspection(selectedFile)
-      return
+    const validPdfs = files.filter(f => validatePdfFile(f).valid);
+    
+    if (validPdfs.length === 0) {
+      if (files.length > 0) {
+        const validation = validatePdfFile(files[0]);
+        setState({ stage: 'error', message: !validation.valid ? validation.message : 'Invalid PDF', reason: 'invalid' });
+      }
+      return;
     }
 
-    const validation = files[0] ? validatePdfFile(files[0]) : undefined
-    setState({
-      stage: 'error',
-      reason: 'invalid',
-      message:
-        validation && !validation.valid
-          ? validation.message
-          : 'Please choose a PDF file to continue.',
-    })
+    if (validPdfs.length === 1) {
+      beginInspection(validPdfs[0]);
+    } else {
+      setState(prev => ({ ...prev, stage: 'batch', batchFiles: validPdfs }));
+    }
   }
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -257,6 +258,10 @@ export function UploadDropzone() {
         />
       )
     }
+    
+    if (state.stage === 'batch') {
+      return <BatchDropzone files={state.batchFiles} mode={compressionMode} onReset={reset} />
+    }
 
     // idle
     return (
@@ -282,7 +287,7 @@ export function UploadDropzone() {
         <ModeSelector
           selectedMode={compressionMode}
           onChange={handleModeChange}
-          disabled={state.stage === 'compressing' || state.stage === 'inspecting'}
+          disabled={state.stage === 'compressing' || state.stage === 'inspecting' || state.stage === 'batch'}
         />
       </div>
       <section
@@ -298,8 +303,9 @@ export function UploadDropzone() {
           className="file-input"
           type="file"
           accept="application/pdf,.pdf"
+          multiple
           onChange={handleFileChange}
-          aria-label="Choose a PDF file"
+          aria-label="Choose PDF files"
         />
 
         {renderContent()}

@@ -9,13 +9,16 @@ import type { CompressionOptions, CompressionResult } from './CompressionEngine'
 import type { WorkerRequest, WorkerResponse } from '../../workers/compression.worker';
 import CompressionWorker from '../../workers/compression.worker?worker';
 
+type PendingRequest = {
+  resolve: (res: CompressionResult) => void;
+  reject: (err: unknown) => void;
+  batchId?: string;
+};
+
 export class CompressionClient {
   private worker: Worker | null = null;
   private currentId = 0;
-  private pendingRequests = new Map<
-    string,
-    { resolve: (res: CompressionResult) => void; reject: (err: unknown) => void }
-  >();
+  private pendingRequests = new Map<string, PendingRequest>();
 
   constructor() {
     this.worker = new CompressionWorker();
@@ -50,6 +53,7 @@ export class CompressionClient {
   public async compress(
     input: Uint8Array,
     options: CompressionOptions = { mode: 'balanced' },
+    batchId?: string,
   ): Promise<CompressionResult> {
     return new Promise((resolve, reject) => {
       if (!this.worker) {
@@ -58,7 +62,7 @@ export class CompressionClient {
       }
 
       const id = String(++this.currentId);
-      this.pendingRequests.set(id, { resolve, reject });
+      this.pendingRequests.set(id, { resolve, reject, batchId });
 
       // Clone the buffer before transfer — the caller may still reference
       // the Uint8Array after calling compress().
@@ -67,6 +71,7 @@ export class CompressionClient {
       const req: WorkerRequest = {
         type: 'compress',
         id,
+        batchId,
         input: inputCopy,
         options,
       };

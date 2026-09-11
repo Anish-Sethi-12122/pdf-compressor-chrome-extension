@@ -16,12 +16,14 @@ export type WorkerRequest = {
   id: string;
   input: ArrayBuffer;
   options?: CompressionOptions;
+  batchId?: string;
 };
 
 export type WorkerResponse = {
   type: 'result';
   id: string;
   result: CompressionResult;
+  batchId?: string;
 };
 
 const engine = new QpdfCompressionEngine();
@@ -39,6 +41,7 @@ self.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
       const response: WorkerResponse = {
         type: 'result',
         id: req.id,
+        batchId: req.batchId,
         result,
       };
 
@@ -58,6 +61,7 @@ self.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
       const response: WorkerResponse = {
         type: 'result',
         id: req.id,
+        batchId: req.batchId,
         result: errorResult,
       };
       (self as unknown as Worker).postMessage(response);
