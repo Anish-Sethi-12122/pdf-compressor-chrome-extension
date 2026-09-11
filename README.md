@@ -5,7 +5,7 @@
   
   **Fast, Private, 100% Local PDF Compression for Google Chrome**
 
-  [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](#)
+  [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](#)
   [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
   [![Privacy](https://img.shields.io/badge/privacy-local--only-success.svg)](#)
   [![Permissions](https://img.shields.io/badge/permissions-0-brightgreen.svg)](#)
@@ -43,7 +43,7 @@ The easiest and most secure way to install PDF Compressor is directly through th
 
 If you prefer to load the extension manually from a downloaded release:
 
-1. Download the latest `PDF_Compressor_Release_v1.0.0.zip` from the [Releases page](https://github.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/releases).
+1. Download the latest `PDF_Compressor_Release_v1.1.0.zip` from the [Releases page](https://github.com/Anish-Sethi-12122/pdf-compressor-chrome-extension/releases).
 2. Extract the ZIP file to a folder on your computer.
 3. Open Chrome and navigate to `chrome://extensions`.
 4. Turn on **Developer mode** in the top right corner.

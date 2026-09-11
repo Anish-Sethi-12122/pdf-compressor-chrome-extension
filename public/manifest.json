@@ -3,7 +3,7 @@
   "name": "PDF Compressor",
   "short_name": "PDF Compressor",
   "description": "A focused, private PDF compression utility.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "action": {
     "default_title": "PDF Compressor",
     "default_popup": "index.html",
