@@ -32,6 +32,7 @@ async function launchExtension() {
     args: [
       `--disable-extensions-except=${DIST_PATH}`,
       `--load-extension=${DIST_PATH}`,
+      '--no-sandbox',
     ],
   });
   const page = await browser.newPage();

@@ -12,7 +12,8 @@ async function runModeTests() {
     headless: false,
     args: [
       `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`
+      `--load-extension=${extensionPath}`,
+      '--no-sandbox'
     ]
   });
 

@@ -253,3 +253,5 @@ test-fixtures/phase-c/
 test-fixtures/real-world/
 test-fixtures/renders/
 test-fixtures/noise.png
+qa-*.json
+qa-*.mjs
