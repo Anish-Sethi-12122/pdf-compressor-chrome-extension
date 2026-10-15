@@ -68,20 +68,24 @@ If you prefer to load the extension manually from a downloaded release:
 
 ## 🎛️ Features
 
-*   **Three Compression Modes:**
-    *   **Balanced (Default):** The optimal mix of size reduction and visual clarity (JPEG quality 0.82, downsampled to 2400px longest edge).
-    *   **Low:** Minimal compression for excellent quality (JPEG quality 0.90, downsampled to 3000px longest edge).
-    *   **High:** Aggressive compression for maximum space savings (JPEG quality 0.60, downsampled to 1600px longest edge).
-*   **Parallel Batch Processing:** Drop multiple PDFs at once. The extension intelligently utilizes bounded Web Workers based on your hardware concurrency to compress multiple files simultaneously while keeping memory footprints low.
-*   **Intelligent Replacement:** Extracts eligible large image streams, re-encodes them as lossy JPEGs, and replaces them while preserving native document structure.
-*   **Original File Fallback:** If compression isn't worthwhile or the output is invalid, the original file is safely retained.
+*   **Three Calibrated Compression Modes:**
+    *   **Balanced (Default):** The optimal mix of size reduction and visual clarity (JPEG quality 0.72, max 2400px longest edge or 2.0 Megapixel area budget).
+    *   **Low:** Minimal compression for excellent print/presentation fidelity (JPEG quality 0.90, max 3000px longest edge or 4.0 Megapixel area budget).
+    *   **High:** Aggressive compression for maximum space savings (JPEG quality 0.60, max 1600px longest edge or 1.0 Megapixel area budget).
+*   **Dual-Constraint Downsampling:** Evaluates both longest-edge bounds and total pixel-area budgets, ensuring high-DPI square crops and non-standard aspect ratio images are intelligently downsampled without excessive shrinking or upscaling.
+*   **Multi-Format Raster Optimization:** Supports both `/DCTDecode` (JPEG) and safe `/FlateDecode` (PNG / lossless raster) image streams. Decompresses raw image streams and reverses PNG predictors directly in C++ WASM before re-encoding. Automatically synchronizes PDF dictionaries (updating `/ColorSpace` to `/DeviceRGB` and stripping stale `/DecodeParms` / `/Decode` arrays).
+*   **Strict Lossy Threshold Protection:** Recompressed JPEGs require at least a 10% size reduction, while lossy `/FlateDecode` conversions enforce a strict 30% reduction threshold to prevent generational artifacts on hard-edged diagrams and text.
+*   **Format, Transparency & Decode Safeguards:** Protects transparent images (`/SMask` / `/Mask`), safely excludes non-default `/Decode` arrays (e.g. inverted scans), excludes complex or unsupported color spaces (DeviceCMYK, ICCBased), and rejects multi-filter chains to guarantee PDF visual integrity.
+*   **Parallel Batch Processing:** Drop multiple PDFs at once. The extension intelligently utilizes bounded Web Workers based on your hardware concurrency (up to 4 parallel workers) to compress multiple files simultaneously while keeping memory footprints low.
+*   **Original File Fallback:** If compression isn't worthwhile (output >= input) or secondary validation fails, the original file is safely retained (`changed: false`).
 *   **Accessibility First:** Fully navigable via keyboard (`Tab` / `Shift+Tab`) with correct ARIA live regions for screen readers.
 
 ## 🏗️ Architecture
 
 **Core Libraries:**
-*   **Custom qpdf WebAssembly (`qpdf_wrapper.wasm`)**: Compiled specifically for this project. Performs structural optimization, linearization, and stream extraction/replacement.
-*   **pdf-lib (1.17.1)**: Used exclusively for lightweight, fast PDF inspection (page count, validity check) before and after compression.
+*   **Custom qpdf WebAssembly (`qpdf_wrapper.wasm`)**: Compiled specifically for this project with Emscripten. Performs structural optimization (object streams, cross-reference deduplication, Flate recompression), raw and decoded stream extraction with native PNG predictor reversal (`getDecodedStreamData`), and in-place image stream replacement.
+*   **Browser Canvas / OffscreenCanvas API**: Hardware-accelerated decoding via `createImageBitmap`, high-quality bicubic downsampling, and JPEG re-encoding in isolated Web Workers.
+*   **pdf-lib (1.17.1)**: Used exclusively for lightweight, fast PDF inspection (page count, structural integrity) before and after compression.
 
 **Security & Monetization Decisions:**
 *   **No Third-Party Ads:** Integrating third-party advertising was explicitly rejected. Ad networks require remote code execution (violating MV3 CSP) and introduce tracking vectors.
@@ -118,15 +122,17 @@ If you prefer to load the extension manually from a downloaded release:
 Run the full suite of regression, UI, accessibility, and lifecycle tests:
 
 ```bash
-node test-extension.mjs
-node test-modes.mjs
-node test-mode-ui.mjs
-node test-accessibility.mjs
-node test-hardening.mjs
-node test-analytics.mjs
-node test-attribution.mjs
-node test-ga4.mjs
-node test-batch.mjs
+node test-phase-c-units.mjs      # Fast unit tests (84 assertions: classifiers, validator, memory bridge)
+node test-modes.mjs              # Compression mode size ordering verification
+node test-mode-ui.mjs            # Mode selector UI interaction and persistence
+node test-extension.mjs          # End-to-end browser compression lifecycle
+node test-hardening.mjs          # Matrix hardening (corrupted, encrypted, empty, unsupported)
+node test-batch.mjs              # Concurrent worker pool & name collision tests
+node test-accessibility.mjs      # Keyboard navigation & ARIA compliance
+node test-analytics.mjs          # Consent gating & privacy isolation tests
+node test-attribution.mjs        # Creator attribution and support links
+node test-ga4.mjs                # Telemetry dispatch protocol verification
+node run-phase-c1-benchmark.mjs  # Real-world corpus & Chromium PDFium visual rendering benchmark
 ```
 
 *Note on Test/Benchmark Infrastructure: The repository intentionally retains test fixtures (`test_fixture.pdf`), historical benchmarking scripts (`benchmark.mjs`), and WASM compilation dependencies (e.g., `qpdf_wrapper.cpp`, `build_wasm.bat`). These are preserved for reproducibility and regression testing.*

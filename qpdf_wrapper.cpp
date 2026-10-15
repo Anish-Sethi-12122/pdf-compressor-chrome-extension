@@ -135,7 +135,35 @@ public:
                     streamLen = (int)lenKey.getIntValue();
                 }
             }
-            info.set("streamLength", streamLen);
+            // Custom /Decode array check
+            bool hasCustomDecode = false;
+            if (dict.hasKey("/Decode")) {
+                auto decode = dict.getKey("/Decode");
+                if (decode.isArray()) {
+                    int n = decode.getArrayNItems();
+                    if (n == 2) {
+                        double d0 = decode.getArrayItem(0).getNumericValue();
+                        double d1 = decode.getArrayItem(1).getNumericValue();
+                        if (d0 != 0.0 || d1 != 1.0) {
+                            hasCustomDecode = true;
+                        }
+                    } else if (n == 6) {
+                        for (int i = 0; i < 6; i += 2) {
+                            double d0 = decode.getArrayItem(i).getNumericValue();
+                            double d1 = decode.getArrayItem(i + 1).getNumericValue();
+                            if (d0 != 0.0 || d1 != 1.0) {
+                                hasCustomDecode = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        hasCustomDecode = true;
+                    }
+                } else {
+                    hasCustomDecode = true;
+                }
+            }
+            info.set("hasCustomDecode", hasCustomDecode);
 
             result.call<void>("push", info);
         }
@@ -144,7 +172,22 @@ public:
     }
 
     // -----------------------------------------------------------------------
-    // getStreamData — exact raw bytes of the stream
+    // Memory ownership bridge helper:
+    // typed_memory_view is only a non-owning pointer into WASM heap.
+    // If the underlying C++ Buffer is destroyed upon function return,
+    // the pointer becomes dangling (Use-After-Free).
+    // By constructing a new Uint8Array(view) synchronously before the
+    // C++ Buffer is destroyed, V8 allocates its own JS ArrayBuffer and copies
+    // the bytes, guaranteeing complete JS memory ownership and safety.
+    // -----------------------------------------------------------------------
+    static val makeSafeJsBuffer(const uint8_t* data, size_t size) {
+        val Uint8Array = val::global("Uint8Array");
+        val view = val(typed_memory_view(size, data));
+        return Uint8Array.new_(view);
+    }
+
+    // -----------------------------------------------------------------------
+    // getStreamData — exact raw bytes of the stream (safe JS-owned Uint8Array)
     // -----------------------------------------------------------------------
     val getStreamData(int obj_id, int gen) {
         QPDFObjectHandle obj = pdf.getObjectByID(obj_id, gen);
@@ -157,7 +200,24 @@ public:
             return val::null();
         }
 
-        return val(typed_memory_view(buf->getSize(), buf->getBuffer()));
+        return makeSafeJsBuffer(buf->getBuffer(), buf->getSize());
+    }
+
+    // -----------------------------------------------------------------------
+    // getDecodedStreamData — uncompressed bytes (safe JS-owned Uint8Array)
+    // -----------------------------------------------------------------------
+    val getDecodedStreamData(int obj_id, int gen) {
+        QPDFObjectHandle obj = pdf.getObjectByID(obj_id, gen);
+        if (!obj.isStream()) {
+            return val::null();
+        }
+
+        std::shared_ptr<Buffer> buf = obj.getStreamData(qpdf_dl_all);
+        if (!buf) {
+            return val::null();
+        }
+
+        return makeSafeJsBuffer(buf->getBuffer(), buf->getSize());
     }
 
     // -----------------------------------------------------------------------
@@ -170,23 +230,43 @@ public:
         std::vector<uint8_t> buf = vecFromJSArray<uint8_t>(new_data);
         std::string data_str(reinterpret_cast<const char*>(buf.data()), buf.size());
 
-        // Force /DCTDecode filter for the replacement JPEG
+        // Force /DCTDecode filter for the replacement JPEG.
+        // decode_parms is null — JPEG (DCTDecode) does not use /DecodeParms.
         auto filter      = QPDFObjectHandle::newName("/DCTDecode");
         auto decode_parms = QPDFObjectHandle::newNull();
         obj.replaceStreamData(data_str, filter, decode_parms);
 
-        // Update dictionary if dimensions changed
+        // Update image dictionary after stream replacement.
         QPDFObjectHandle dict = obj.getDict();
+
+        // Dimensions: update only if changed.
         if (new_width > 0 && new_width != (int)dict.getKey("/Width").getNumericValue()) {
             dict.replaceKey("/Width",  QPDFObjectHandle::newInteger(new_width));
         }
         if (new_height > 0 && new_height != (int)dict.getKey("/Height").getNumericValue()) {
             dict.replaceKey("/Height", QPDFObjectHandle::newInteger(new_height));
         }
+
+        // ColorSpace: the Canvas API always encodes ImageData as RGB JPEG,
+        // regardless of the original colorspace (DeviceGray images are expanded
+        // to RGBA before passing to ImageData, so the output JPEG is always RGB).
+        // Correct the dict to /DeviceRGB so it matches the actual JPEG data.
+        dict.replaceKey("/ColorSpace", QPDFObjectHandle::newName("/DeviceRGB"));
+
+        // Remove /DecodeParms if present (carried over from FlateDecode images).
+        // JPEG (DCTDecode) does not use /DecodeParms; leaving it would be malformed.
+        if (dict.hasKey("/DecodeParms")) {
+            dict.removeKey("/DecodeParms");
+        }
+
+        // Remove /Decode if present (replacement JPEG assumes default [0, 1, ...]).
+        if (dict.hasKey("/Decode")) {
+            dict.removeKey("/Decode");
+        }
     }
 
     // -----------------------------------------------------------------------
-    // structuralOptimize — write with full compression flags, return new bytes
+    // structuralOptimize — write with full compression flags, return safe bytes
     // -----------------------------------------------------------------------
     val structuralOptimize() {
         QPDFWriter writer(pdf);
@@ -197,11 +277,11 @@ public:
         writer.write();
 
         std::shared_ptr<Buffer> buf = writer.getBufferSharedPointer();
-        return val(typed_memory_view(buf->getSize(), buf->getBuffer()));
+        return makeSafeJsBuffer(buf->getBuffer(), buf->getSize());
     }
 
     // -----------------------------------------------------------------------
-    // save — write current state with stream-data=preserve (for mid-pipeline)
+    // save — write current state with stream-data=preserve (return safe bytes)
     // -----------------------------------------------------------------------
     val save() {
         QPDFWriter writer(pdf);
@@ -211,7 +291,7 @@ public:
         writer.write();
 
         std::shared_ptr<Buffer> buf = writer.getBufferSharedPointer();
-        return val(typed_memory_view(buf->getSize(), buf->getBuffer()));
+        return makeSafeJsBuffer(buf->getBuffer(), buf->getSize());
     }
 
     // -----------------------------------------------------------------------
@@ -230,6 +310,7 @@ EMSCRIPTEN_BINDINGS(qpdf_wrapper) {
         .constructor<val>()
         .function("inspectImages",       &PDFCompressor::inspectImages)
         .function("getStreamData",       &PDFCompressor::getStreamData)
+        .function("getDecodedStreamData",&PDFCompressor::getDecodedStreamData)
         .function("replaceImage",        &PDFCompressor::replaceImage)
         .function("structuralOptimize",  &PDFCompressor::structuralOptimize)
         .function("save",                &PDFCompressor::save)

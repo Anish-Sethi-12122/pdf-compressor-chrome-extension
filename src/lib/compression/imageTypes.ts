@@ -28,6 +28,8 @@ export type ImageMetadata = {
   streamLength: number;
   /** true if /Filter was a PDF array rather than a single name */
   filterIsArray: boolean;
+  /** true if /Decode array is present and non-default */
+  hasCustomDecode?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -41,7 +43,8 @@ export type SkipReason =
   | 'too_small'               // stream < MIN_STREAM_BYTES
   | 'unsupported_bits'        // not 8 bpc
   | 'multi_filter'            // filter chain array — too risky
-  | 'zero_dimensions';        // width or height is 0
+  | 'zero_dimensions'         // width or height is 0
+  | 'custom_decode';          // non-default /Decode array (e.g. inverted)
 
 export type ImageCandidate = ImageMetadata & {
   eligible: true;
@@ -57,6 +60,15 @@ export type ClassifiedImage = ImageCandidate | ImageSkipped;
 // ---------------------------------------------------------------------------
 // Processing outcome (after decode → encode → compare)
 // ---------------------------------------------------------------------------
+
+export type RejectReason =
+  | 'decode_failed'
+  | 'bitmap_failed'
+  | 'canvas_failed'
+  | 'encode_failed'
+  | 'not_smaller'
+  | 'unsupported_raw_format'
+  | string;
 
 export type ImageProcessingResult =
   | {
@@ -77,5 +89,5 @@ export type ImageProcessingResult =
       accepted: false;
       objectId: number;
       generation: number;
-      reason: 'encode_failed' | 'not_smaller' | 'decode_failed' | 'canvas_failed';
+      reason: RejectReason;
     };

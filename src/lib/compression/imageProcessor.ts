@@ -56,7 +56,7 @@ export const REPLACEMENT_THRESHOLD = 0.10;
  * @returns ImageProcessingResult — accepted with new JPEG bytes, or rejected.
  */
 export async function processImage(
-  jpegBytes: Uint8Array,
+  imageBytes: Uint8Array,
   candidate: ImageCandidate,
   config: {
     jpegQuality: number;
@@ -70,7 +70,7 @@ export async function processImage(
 ): Promise<ImageProcessingResult> {
   const objectId = candidate.objectId;
   const generation = candidate.generation;
-  const originalBytes = jpegBytes.byteLength;
+  const originalBytes = imageBytes.byteLength;
   const originalWidth = candidate.width;
   const originalHeight = candidate.height;
 
@@ -78,23 +78,59 @@ export async function processImage(
 
   try {
     // -----------------------------------------------------------------------
-    // Step 1 — Decode JPEG → ImageBitmap
+    // Step 1 — Decode / Prepare ImageBitmap
     // -----------------------------------------------------------------------
-    let decodeBlob: Blob;
-    try {
-      // Explicitly slice to ArrayBuffer to avoid SharedArrayBuffer type conflict
-      const ab: ArrayBuffer = jpegBytes.buffer instanceof ArrayBuffer
-        ? jpegBytes.buffer.slice(jpegBytes.byteOffset, jpegBytes.byteOffset + jpegBytes.byteLength) as ArrayBuffer
-        : new Uint8Array(jpegBytes).buffer;
-      decodeBlob = new Blob([ab], { type: 'image/jpeg' });
-    } catch {
-      return { accepted: false, objectId, generation, reason: 'decode_failed' };
-    }
+    if (candidate.filter === '/FlateDecode') {
+      // Raw pixels need to be converted to ImageData
+      // Only 8 bpc is supported by the classifier
+      const w = candidate.width;
+      const h = candidate.height;
+      const expectedRgbSize = w * h * 3;
+      const expectedGraySize = w * h;
+      
+      let rgba = new Uint8ClampedArray(w * h * 4);
+      if (candidate.colorSpace === '/DeviceRGB' && imageBytes.length >= expectedRgbSize) {
+        for (let i = 0, j = 0; i < expectedRgbSize; i += 3, j += 4) {
+          rgba[j] = imageBytes[i];
+          rgba[j + 1] = imageBytes[i + 1];
+          rgba[j + 2] = imageBytes[i + 2];
+          rgba[j + 3] = 255;
+        }
+      } else if (candidate.colorSpace === '/DeviceGray' && imageBytes.length >= expectedGraySize) {
+        for (let i = 0, j = 0; i < expectedGraySize; i++, j += 4) {
+          const val = imageBytes[i];
+          rgba[j] = val;
+          rgba[j + 1] = val;
+          rgba[j + 2] = val;
+          rgba[j + 3] = 255;
+        }
+      } else {
+        return { accepted: false, objectId, generation, reason: 'unsupported_raw_format' };
+      }
+      
+      const imgData = new ImageData(rgba, w, h);
+      try {
+        bitmap = await createImageBitmap(imgData);
+      } catch {
+        return { accepted: false, objectId, generation, reason: 'bitmap_failed' };
+      }
+    } else {
+      let decodeBlob: Blob;
+      try {
+        // Explicitly slice to ArrayBuffer to avoid SharedArrayBuffer type conflict
+        const ab: ArrayBuffer = imageBytes.buffer instanceof ArrayBuffer
+          ? imageBytes.buffer.slice(imageBytes.byteOffset, imageBytes.byteOffset + imageBytes.byteLength) as ArrayBuffer
+          : new Uint8Array(imageBytes).buffer;
+        decodeBlob = new Blob([ab], { type: 'image/jpeg' });
+      } catch {
+        return { accepted: false, objectId, generation, reason: 'decode_failed' };
+      }
 
-    try {
-      bitmap = await createImageBitmap(decodeBlob);
-    } catch {
-      return { accepted: false, objectId, generation, reason: 'decode_failed' };
+      try {
+        bitmap = await createImageBitmap(decodeBlob);
+      } catch {
+        return { accepted: false, objectId, generation, reason: 'decode_failed' };
+      }
     }
 
     // -----------------------------------------------------------------------
@@ -107,7 +143,19 @@ export async function processImage(
     let resized = false;
 
     const longestEdge = Math.max(srcW, srcH);
-    if (longestEdge > config.maxImageDimension) {
+    
+    // Support either maxImageDimension (longest edge) or maxImageArea (pixel budget)
+    if ((config as any).maxImageArea) {
+      const area = srcW * srcH;
+      if (area > (config as any).maxImageArea) {
+        const scale = Math.sqrt((config as any).maxImageArea / area);
+        outW = Math.round(srcW * scale);
+        outH = Math.round(srcH * scale);
+        outW = Math.max(1, outW);
+        outH = Math.max(1, outH);
+        resized = true;
+      }
+    } else if (longestEdge > config.maxImageDimension) {
       const scale = config.maxImageDimension / longestEdge;
       outW = Math.round(srcW * scale);
       outH = Math.round(srcH * scale);
@@ -158,7 +206,13 @@ export async function processImage(
     // -----------------------------------------------------------------------
     // Step 5 — Accept or reject based on size threshold
     // -----------------------------------------------------------------------
-    const threshold = originalBytes * (1 - config.replacementThreshold);
+    let requiredThreshold = config.replacementThreshold;
+    if (candidate.filter === '/FlateDecode') {
+      // PNG->JPEG is lossy, demand at least 30% savings to justify the artifact introduction
+      requiredThreshold = Math.max(requiredThreshold, 0.30);
+    }
+
+    const threshold = originalBytes * (1 - requiredThreshold);
     if (candidateBytes >= threshold) {
       // Not materially smaller — keep original to avoid generational loss.
       console.debug(`[imageProcessor] Skipped obj ${objectId}: new ${candidateBytes} >= threshold ${threshold} (orig ${originalBytes})`);

@@ -15,6 +15,8 @@ export type CompressionOptions = {
   mode?: CompressionMode;
   /** Legacy preset support. Use mode instead. */
   preset?: string;
+  /** Benchmark override profile. */
+  benchmarkProfile?: any;
 };
 
 // ---------------------------------------------------------------------------
@@ -31,6 +33,7 @@ export type CompressionStats = {
   imagesDetected: number;
   imagesModified: number;
   imagesSkipped: number;
+  imageLogs?: any[]; // For benchmark telemetry
 };
 
 // ---------------------------------------------------------------------------

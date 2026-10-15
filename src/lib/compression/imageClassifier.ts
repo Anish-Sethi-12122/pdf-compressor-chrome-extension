@@ -24,9 +24,9 @@ import type { ImageMetadata, ClassifiedImage } from './imageTypes';
 export const MIN_STREAM_BYTES = 32_768; // 32 KB
 
 /**
- * Supported PDF filter name. Only /DCTDecode (JPEG) is targeted in Phase 7A.
+ * Supported PDF filters.
  */
-const SUPPORTED_FILTER = '/DCTDecode';
+const SUPPORTED_FILTERS = new Set(['/DCTDecode', '/FlateDecode']);
 
 /**
  * Supported color spaces. DeviceCMYK is explicitly excluded:
@@ -35,9 +35,7 @@ const SUPPORTED_FILTER = '/DCTDecode';
 const SUPPORTED_COLOR_SPACES = new Set(['/DeviceRGB', '/DeviceGray']);
 
 /**
- * Supported bits-per-component. 8 bpc is standard JPEG.
- * 1 bpc = monochrome bitmap (CCITT territory), not JPEG.
- * 16 bpc = uncommon, not supported by standard JPEG.
+ * Supported bits-per-component.
  */
 const SUPPORTED_BPC = new Set([8]);
 
@@ -45,33 +43,27 @@ const SUPPORTED_BPC = new Set([8]);
 // Classifier
 // ---------------------------------------------------------------------------
 
-/**
- * Classify a single image XObject.
- * Returns either an eligible candidate or a skipped record with a reason.
- */
 export function classifyImage(meta: ImageMetadata, minStreamBytes: number = MIN_STREAM_BYTES): ClassifiedImage {
-  // Must have sane dimensions
   if (meta.width === 0 || meta.height === 0) {
     return { ...meta, eligible: false, reason: 'zero_dimensions' };
   }
 
-  // Multi-filter chains (array of filters) are too risky in Phase 7A.
-  // e.g. [/FlateDecode, /DCTDecode] — skip.
   if (meta.filterIsArray) {
     return { ...meta, eligible: false, reason: 'multi_filter' };
   }
 
-  // Only JPEG/DCTDecode is targeted.
-  if (meta.filter !== SUPPORTED_FILTER) {
+  if (!SUPPORTED_FILTERS.has(meta.filter)) {
     return { ...meta, eligible: false, reason: 'wrong_filter' };
   }
 
-  // Transparency / masks must be skipped — cannot safely recompress.
   if (meta.hasMask) {
     return { ...meta, eligible: false, reason: 'has_mask' };
   }
 
-  // Only DeviceRGB and DeviceGray are safe to round-trip through Canvas.
+  if (meta.hasCustomDecode) {
+    return { ...meta, eligible: false, reason: 'custom_decode' };
+  }
+
   if (!SUPPORTED_COLOR_SPACES.has(meta.colorSpace)) {
     return { ...meta, eligible: false, reason: 'unsupported_colorspace' };
   }

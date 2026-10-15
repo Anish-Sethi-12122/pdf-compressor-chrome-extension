@@ -20,6 +20,8 @@ export interface RawImageInfo {
   hasMask: boolean;
   streamLength: number;
   filterIsArray: boolean;
+  /** true if /Decode array is present and non-default (e.g. inverted [1 0]) */
+  hasCustomDecode?: boolean;
 }
 
 /** Bound PDFCompressor class instance */
@@ -32,7 +34,11 @@ export interface PDFCompressor {
 
   /**
    * Replace the JPEG stream of a specific image object.
-   * Also updates /Width and /Height in the dict when dimensions change.
+   * - Updates /Filter to /DCTDecode (JPEG).
+   * - Updates /Width and /Height in the dict when dimensions change.
+   * - Always updates /ColorSpace to /DeviceRGB, since Canvas ImageData
+   *   always produces RGB JPEG (DeviceGray sources are expanded to RGBA).
+   * - Removes /DecodeParms if present (not valid for DCTDecode).
    */
   replaceImage(
     objId: number,

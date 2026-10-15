@@ -18,6 +18,8 @@ export interface CompressionProfile {
   minEligibleStreamSize: number;
   /** Minimum proportional size reduction required to accept a replacement (e.g. 0.10 = 10% smaller). */
   replacementThreshold: number;
+  /** Optional pixel budget downsampling limit. */
+  maxImageArea?: number;
 }
 
 export const COMPRESSION_PROFILES: Record<CompressionMode, CompressionProfile> = {
@@ -27,6 +29,7 @@ export const COMPRESSION_PROFILES: Record<CompressionMode, CompressionProfile> =
     description: 'Prioritizes visual quality over file size reduction.',
     jpegQuality: 0.90, // Higher quality than balanced
     maxImageDimension: 3000, // Keep larger images
+    maxImageArea: 4000000,
     minEligibleStreamSize: 32_768, // 32 KB, same as balanced
     replacementThreshold: 0.10, // Baseline (10%)
   },
@@ -34,8 +37,9 @@ export const COMPRESSION_PROFILES: Record<CompressionMode, CompressionProfile> =
     mode: 'balanced',
     label: 'Balanced Compression',
     description: 'Good compression, good quality. The default setting.',
-    jpegQuality: 0.82, // Baseline
+    jpegQuality: 0.72,
     maxImageDimension: 2400, // Baseline
+    maxImageArea: 2000000,
     minEligibleStreamSize: 32_768, // Baseline (32 KB)
     replacementThreshold: 0.10, // Baseline (10%)
   },
@@ -43,10 +47,11 @@ export const COMPRESSION_PROFILES: Record<CompressionMode, CompressionProfile> =
     mode: 'high',
     label: 'High Compression',
     description: 'Prioritizes file size reduction. May visibly reduce image quality.',
-    jpegQuality: 0.60, // Lower quality
-    maxImageDimension: 1600, // More aggressive downsampling
-    minEligibleStreamSize: 16_384, // 16 KB, compress smaller images too
-    replacementThreshold: 0.10, // Baseline (10%)
+    jpegQuality: 0.60,
+    maxImageDimension: 1600,
+    maxImageArea: 1000000,
+    minEligibleStreamSize: 16_384,
+    replacementThreshold: 0.10,
   },
 };
 

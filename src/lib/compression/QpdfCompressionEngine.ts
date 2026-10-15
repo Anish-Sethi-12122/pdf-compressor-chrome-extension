@@ -67,7 +67,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
     
     // Resolve mode from options
     const mode = resolveCompressionMode(options?.mode ?? options?.preset);
-    const profile = COMPRESSION_PROFILES[mode];
+    const profile = options?.benchmarkProfile || COMPRESSION_PROFILES[mode];
 
     // -----------------------------------------------------------------------
     // Step 0 — Basic input validation
@@ -159,6 +159,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
           hasMask:         img.hasMask,
           streamLength:    img.streamLength,
           filterIsArray:   img.filterIsArray,
+          hasCustomDecode: !!img.hasCustomDecode,
         });
       }
     } catch (err: unknown) {
@@ -176,6 +177,26 @@ export class QpdfCompressionEngine implements CompressionEngine {
     let imagesModified = 0;
     let imagesSkipped = skipped.length + (rawImages.length - candidates.length - skipped.length);
 
+    // Initialize telemetry
+    const imageLogs: any[] = [];
+
+    // Log skipped images right away
+    for (const s of skipped) {
+      imageLogs.push({
+        objectId: s.objectId,
+        filter: s.filter,
+        dimensions: `${s.width}x${s.height}`,
+        colorspace: s.colorSpace,
+        bpc: s.bitsPerComponent,
+        streamLength: s.streamLength,
+        accepted: false,
+        reason: s.reason,
+        resize: false,
+        outDims: '',
+        quality: 0
+      });
+    }
+
     // -----------------------------------------------------------------------
     // Step 6 — Process candidates sequentially (one at a time to control memory)
     // -----------------------------------------------------------------------
@@ -184,37 +205,58 @@ export class QpdfCompressionEngine implements CompressionEngine {
     if (candidates.length > 0 && compressor2) {
       for (const candidate of candidates) {
         // Skip duplicates (shared XObjects already processed)
-        if (processedObjectIds.has(candidate.objectId)) continue;
+        if (processedObjectIds.has(candidate.objectId)) {
+           // Dedup log
+           imageLogs.push({
+              objectId: candidate.objectId,
+              filter: candidate.filter,
+              dimensions: `${candidate.width}x${candidate.height}`,
+              colorspace: candidate.colorSpace,
+              bpc: candidate.bitsPerComponent,
+              streamLength: candidate.streamLength,
+              accepted: false,
+              reason: 'duplicate_shared_xobject',
+              resize: false, outDims: '', quality: 0
+           });
+           continue;
+        }
         processedObjectIds.add(candidate.objectId);
 
-        // Extract the current JPEG stream bytes from the WASM compressor
-        let jpegBytes: Uint8Array | null = null;
+        // Extract stream bytes from the WASM compressor
+        let imageBytes: Uint8Array | null = null;
         try {
-          // Extract the JPEG stream bytes for this object from the optimised PDF bytes.
-          // If extraction fails, the image is skipped (failure isolation per spec §25).
-          jpegBytes = await extractImageStream(mod, pass1Bytes, candidate.objectId, candidate.generation);
+          if (candidate.filter === '/FlateDecode') {
+            imageBytes = await extractDecodedStream(mod, pass1Bytes, candidate.objectId, candidate.generation);
+          } else {
+            imageBytes = await extractImageStream(mod, pass1Bytes, candidate.objectId, candidate.generation);
+          }
         } catch (err: unknown) {
           console.warn(`[QpdfEngine] Failed to extract stream for obj ${candidate.objectId}:`, err);
           imagesSkipped++;
+          imageLogs.push({ objectId: candidate.objectId, accepted: false, reason: 'extract_failed' });
           continue;
         }
 
-        if (!jpegBytes || jpegBytes.length === 0) {
+        if (!imageBytes || imageBytes.length === 0) {
           imagesSkipped++;
+          imageLogs.push({ objectId: candidate.objectId, accepted: false, reason: 'empty_stream' });
           continue;
         }
 
         // Process (decode → optional resize → JPEG encode → compare)
         let result;
         try {
-          result = await processImage(jpegBytes, candidate, {
+          result = await processImage(imageBytes, candidate, {
             jpegQuality: profile.jpegQuality,
             maxImageDimension: profile.maxImageDimension,
             replacementThreshold: profile.replacementThreshold,
-          });
+            // Add area threshold support for Hypothesis B
+            maxImageArea: profile.maxImageArea
+          } as any);
         } catch (err: unknown) {
           console.warn(`[QpdfEngine] Image processing error on obj ${candidate.objectId}:`, err);
           imagesSkipped++;
+          imageLogs.push({ objectId: candidate.objectId, accepted: false, reason: 'process_exception' });
           continue;
         }
 
@@ -229,6 +271,23 @@ export class QpdfCompressionEngine implements CompressionEngine {
               result.outputHeight,
             );
             imagesModified++;
+            
+            imageLogs.push({
+               objectId: candidate.objectId,
+               filter: candidate.filter,
+               dimensions: `${result.originalWidth}x${result.originalHeight}`,
+               colorspace: candidate.colorSpace,
+               bpc: candidate.bitsPerComponent,
+               streamLength: candidate.streamLength,
+               accepted: true,
+               reason: 'smaller',
+               resize: result.resized,
+               outDims: `${result.outputWidth}x${result.outputHeight}`,
+               quality: result.quality,
+               originalBytes: result.originalBytes,
+               candidateBytes: result.candidateBytes
+            });
+            
             console.debug(
               `[QpdfEngine] Replaced obj ${candidate.objectId}: ` +
               `bytes: ${(result.originalBytes / 1024).toFixed(1)}KB → ${(result.candidateBytes / 1024).toFixed(1)}KB | ` +
@@ -238,9 +297,21 @@ export class QpdfCompressionEngine implements CompressionEngine {
           } catch (err: unknown) {
             console.warn(`[QpdfEngine] replaceImage failed for obj ${candidate.objectId}:`, err);
             imagesSkipped++;
+            imageLogs.push({ objectId: candidate.objectId, accepted: false, reason: 'replace_failed' });
           }
         } else {
           imagesSkipped++;
+          imageLogs.push({
+             objectId: candidate.objectId,
+             filter: candidate.filter,
+             dimensions: `${candidate.width}x${candidate.height}`,
+             colorspace: candidate.colorSpace,
+             bpc: candidate.bitsPerComponent,
+             streamLength: candidate.streamLength,
+             accepted: false,
+             reason: result.reason,
+             resize: false, outDims: '', quality: 0
+          });
           console.debug(`[QpdfEngine] Skipped obj ${candidate.objectId}: ${result.reason}`);
         }
       }
@@ -303,6 +374,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
         imagesDetected,
         imagesModified: 0,
         imagesSkipped: imagesDetected,
+        imageLogs
       };
       return {
         ok: true,
@@ -324,6 +396,7 @@ export class QpdfCompressionEngine implements CompressionEngine {
       imagesDetected,
       imagesModified,
       imagesSkipped,
+      imageLogs
     };
 
     return {
@@ -358,6 +431,26 @@ async function extractImageStream(
     return new Uint8Array(data);
   } catch (err) {
     console.warn(`[QpdfEngine] Failed to extract stream for obj ${objectId}:`, err);
+    return null;
+  } finally {
+    if (compressor) compressor.delete?.();
+  }
+}
+
+async function extractDecodedStream(
+  mod: any,
+  pdfBytes: Uint8Array,
+  objectId: number,
+  generation: number,
+): Promise<Uint8Array | null> {
+  let compressor: any;
+  try {
+    compressor = new mod.PDFCompressor(pdfBytes);
+    const data = compressor.getDecodedStreamData(objectId, generation);
+    if (!data) return null;
+    return new Uint8Array(data);
+  } catch (err) {
+    console.warn(`[QpdfEngine] Failed to extract decoded stream for obj ${objectId}:`, err);
     return null;
   } finally {
     if (compressor) compressor.delete?.();

@@ -32,6 +32,7 @@ export class CompressionClient {
       const pending = this.pendingRequests.get(data.id);
       if (pending) {
         this.pendingRequests.delete(data.id);
+        (window as any).__TEST_RESULT__ = data.result;
         pending.resolve(data.result);
       }
     }
@@ -68,12 +69,17 @@ export class CompressionClient {
       // the Uint8Array after calling compress().
       const inputCopy = input.slice(0).buffer as ArrayBuffer;
 
+      const optionsWithOverride = { ...options };
+      if ((window as any).__BENCHMARK_PROFILE__) {
+        optionsWithOverride.benchmarkProfile = (window as any).__BENCHMARK_PROFILE__;
+      }
+
       const req: WorkerRequest = {
         type: 'compress',
         id,
         batchId,
         input: inputCopy,
-        options,
+        options: optionsWithOverride,
       };
 
       // Transfer the cloned buffer (zero-copy to worker)

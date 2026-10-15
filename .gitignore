@@ -241,3 +241,15 @@ generate_*.mjs
 marketing.html
 resize_icons.py
 update_readme*.py
+
+# ------------------------------------------------------------------------------
+# 13. Phase C & C.1 Benchmark Outputs & Generated Test Corpora
+# ------------------------------------------------------------------------------
+*-benchmark-results.json
+*-validation-results.json
+benchmark/output-v2/
+benchmark/corpus-v2/
+test-fixtures/phase-c/
+test-fixtures/real-world/
+test-fixtures/renders/
+test-fixtures/noise.png
